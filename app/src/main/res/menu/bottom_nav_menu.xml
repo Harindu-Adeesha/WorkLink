@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_dashboard"
+        android:icon="@android:drawable/ic_menu_crop"
+        android:title="Dashboard" />
+    <item
+        android:id="@+id/nav_categories"
+        android:icon="@android:drawable/ic_menu_sort_by_size"
+        android:title="Categories" />
+    <item
+        android:id="@+id/nav_users"
+        android:icon="@android:drawable/ic_menu_myplaces"
+        android:title="Users" />
+    <item
+        android:id="@+id/nav_announcements"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Announcements" />
+</menu>
