@@ -38,6 +38,18 @@
         <activity
             android:name=".ProfileActivity"
             android:exported="false" />
+        <activity
+            android:name=".RegisterActivity"
+            android:exported="false" />
+        <activity
+            android:name=".FreelancerDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".JobDetailsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".ApplyJobActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

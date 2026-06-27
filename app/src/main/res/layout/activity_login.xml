@@ -170,6 +170,20 @@
                 app:cornerRadius="6dp"
                 android:layout_marginTop="24dp"
                 android:backgroundTint="#035DD6"/>
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_sign_up"
+                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:text="Sign Up as Freelancer"
+                android:textAllCaps="false"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:cornerRadius="6dp"
+                android:layout_marginTop="12dp"
+                app:strokeColor="#035DD6"
+                android:textColor="#035DD6"/>
                 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
