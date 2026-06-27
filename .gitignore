@@ -1,0 +1,46 @@
+# Built application files
+*.apk
+*.aab
+*.ap_
+
+# files for the dex VM
+*.dex
+
+# Java class files
+*.class
+
+# Generated files
+bin/
+gen/
+out/
+
+# Gradle files
+.gradle/
+build/
+/build
+local.properties
+
+# IDE files
+.idea/
+/.idea/
+*.iml
+*.ipr
+*.iws
+
+# NDK
+obj/
+.externalNativeBuild
+.cxx
+
+# Profiling and captures
+/captures
+
+# Mac
+.DS_Store
+
+# Keystore files
+*.jks
+*.keystore
+
+# Google Services (e.g. APIs)
+google-services.json
