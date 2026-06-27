@@ -1,0 +1,514 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.coordinatorlayout.widget.CoordinatorLayout 
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F8F9FA"
+    android:fitsSystemWindows="true"
+    tools:context=".EmployerDashboardActivity">
+
+    <com.google.android.material.appbar.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@android:color/white"
+        app:elevation="0dp">
+
+        <androidx.appcompat.widget.Toolbar
+            android:id="@+id/toolbar"
+            android:layout_width="match_parent"
+            android:layout_height="?attr/actionBarSize"
+            app:navigationIcon="@android:drawable/ic_menu_sort_by_size">
+            
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="WorkLink"
+                android:textColor="#035DD6"
+                android:textSize="18sp"
+                android:textStyle="bold"/>
+
+            <TextView
+                android:id="@+id/tv_toolbar_role"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end"
+                android:layout_marginEnd="16dp"
+                android:text="Employer"
+                android:textColor="#6C757D"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:background="#E9ECEF"
+                android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"/>
+        </androidx.appcompat.widget.Toolbar>
+    </com.google.android.material.appbar.AppBarLayout>
+
+    <!-- Main Content Container -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:layout_marginBottom="60dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+        <!-- TAB 1: MY JOBS -->
+        <LinearLayout
+            android:id="@+id/layout_employer_jobs_tab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="visible">
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="My Jobs"
+                    android:textSize="24sp"
+                    android:textStyle="bold"
+                    android:textColor="#14213d"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"/>
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_post_new_job"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="+ Post Job"
+                    android:textAllCaps="false"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    android:backgroundTint="#035DD6"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"/>
+            </RelativeLayout>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Manage the job listings you have posted."
+                android:textColor="#6C757D"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tv_empty_employer_jobs"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="64dp"
+                android:text="You haven't posted any jobs yet."
+                android:textColor="#ADB5BD"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_employer_jobs"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:layout_marginTop="8dp"/>
+        </LinearLayout>
+
+        <!-- TAB 2: APPLICATIONS -->
+        <LinearLayout
+            android:id="@+id/layout_employer_applications_tab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Job Applications"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="#14213d"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Review applications received from freelancers."
+                android:textColor="#6C757D"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tv_empty_employer_applications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="64dp"
+                android:text="No applications received yet."
+                android:textColor="#ADB5BD"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_employer_applications"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"/>
+        </LinearLayout>
+
+        <!-- TAB 3: PROFILE (View / Create / Update / Delete) -->
+        <ScrollView
+            android:id="@+id/layout_employer_profile_tab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="20dp">
+
+                <!-- 3a. NO PROFILE STATE -->
+                <LinearLayout
+                    android:id="@+id/employer_profile_empty_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:gravity="center"
+                    android:padding="32dp"
+                    android:visibility="gone">
+
+                    <ImageView
+                        android:layout_width="80dp"
+                        android:layout_height="80dp"
+                        android:src="@android:drawable/ic_menu_myplaces"
+                        android:padding="16dp"
+                        app:tint="#6C757D"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="No Company Profile Setup"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                        android:textColor="#14213d"
+                        android:layout_marginTop="16dp"/>
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Create a company profile to display details on your job postings."
+                        android:textColor="#6C757D"
+                        android:textSize="14sp"
+                        android:textAlignment="center"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginBottom="24dp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_create_employer_profile_empty"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Create Profile Now"
+                        android:backgroundTint="#035DD6"/>
+                </LinearLayout>
+
+                <!-- 3b. VIEW PROFILE STATE -->
+                <LinearLayout
+                    android:id="@+id/employer_profile_view_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="visible">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="2dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E9ECEF"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <ImageView
+                                android:layout_width="80dp"
+                                android:layout_height="80dp"
+                                android:layout_gravity="center_horizontal"
+                                android:src="@android:drawable/ic_menu_myplaces"
+                                android:background="@drawable/avatar_bg"
+                                android:padding="12dp"/>
+
+                            <TextView
+                                android:id="@+id/tv_employer_profile_name"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="12dp"
+                                android:text="Company Name"
+                                android:textSize="22sp"
+                                android:textStyle="bold"
+                                android:textColor="#14213d"/>
+
+                            <TextView
+                                android:id="@+id/tv_employer_profile_email"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="4dp"
+                                android:text="company@example.com"
+                                android:textColor="#035DD6"
+                                android:textSize="14sp"
+                                android:textStyle="bold"/>
+
+                            <TextView
+                                android:id="@+id/tv_employer_profile_contact"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="4dp"
+                                android:text="Contact: 071-1234567"
+                                android:textColor="#198754"
+                                android:textStyle="bold"
+                                android:textSize="14sp"/>
+
+                            <TextView
+                                android:id="@+id/tv_employer_profile_rating"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_gravity="center_horizontal"
+                                android:layout_marginTop="4dp"
+                                android:text="★ 5.0 Rating"
+                                android:textColor="#FFC107"
+                                android:textStyle="bold"
+                                android:textSize="14sp"/>
+
+                            <View
+                                android:layout_width="match_parent"
+                                android:layout_height="1dp"
+                                android:background="#E9ECEF"
+                                android:layout_marginVertical="16dp"/>
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="About Company"
+                                android:textStyle="bold"
+                                android:textColor="#14213d"
+                                android:textSize="14sp"/>
+
+                            <TextView
+                                android:id="@+id/tv_employer_profile_desc"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="4dp"
+                                android:text="Company description goes here..."
+                                android:textColor="#6C757D"
+                                android:textSize="14sp"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="16dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_edit_employer_profile"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Edit Profile"
+                            app:strokeColor="#035DD6"
+                            android:textColor="#035DD6"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_delete_employer_profile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Delete Profile"
+                            android:backgroundTint="#DC3545"
+                            android:textColor="@android:color/white"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_review_app"
+                        style="@style/Widget.MaterialComponents.Button.TextButton"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:text="★ Rate &amp; Review WorkLink App"
+                        android:textColor="#0D6EFD"
+                        android:textStyle="bold"/>
+                </LinearLayout>
+
+                <!-- 3c. EDIT PROFILE STATE (CREATE / UPDATE FORM) -->
+                <LinearLayout
+                    android:id="@+id/employer_profile_edit_state"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:cardBackgroundColor="@android:color/white"
+                        app:cardCornerRadius="12dp"
+                        app:cardElevation="2dp"
+                        app:strokeWidth="1dp"
+                        app:strokeColor="#E9ECEF"
+                        android:padding="16dp">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:padding="16dp">
+
+                            <TextView
+                                android:id="@+id/tv_employer_form_title"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Update Company Profile"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="#14213d"/>
+
+                            <!-- Name -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="16dp"
+                                android:text="Company Name"
+                                android:textColor="#6C757D"
+                                android:textStyle="bold"
+                                android:textSize="12sp"/>
+                            <EditText
+                                android:id="@+id/et_employer_profile_name"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Google LLC"
+                                android:textSize="14sp"
+                                android:inputType="textPersonName"/>
+
+                            <!-- Email -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="Contact Email"
+                                android:textColor="#6C757D"
+                                android:textStyle="bold"
+                                android:textSize="12sp"/>
+                            <EditText
+                                android:id="@+id/et_employer_profile_email"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="careers@google.com"
+                                android:textSize="14sp"
+                                android:inputType="textEmailAddress"/>
+
+                            <!-- Contact No -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="Contact Phone"
+                                android:textColor="#6C757D"
+                                android:textStyle="bold"
+                                android:textSize="12sp"/>
+                            <EditText
+                                android:id="@+id/et_employer_profile_contact"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="071-1234567"
+                                android:textSize="14sp"
+                                android:inputType="phone"/>
+
+                            <!-- Description -->
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:text="Company Description"
+                                android:textColor="#6C757D"
+                                android:textStyle="bold"
+                                android:textSize="12sp"/>
+                            <EditText
+                                android:id="@+id/et_employer_profile_desc"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:hint="Tell us about your company..."
+                                android:textSize="14sp"
+                                android:inputType="textMultiLine"/>
+                        </LinearLayout>
+                    </com.google.android.material.card.MaterialCardView>
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:layout_marginTop="16dp">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_save_employer_profile"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginEnd="8dp"
+                            android:text="Save"
+                            android:backgroundTint="#035DD6"
+                            android:textColor="@android:color/white"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_cancel_employer_profile_edit"
+                            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:layout_marginStart="8dp"
+                            android:text="Cancel"
+                            app:strokeColor="#6C757D"
+                            android:textColor="#6C757D"/>
+                    </LinearLayout>
+                </LinearLayout>
+
+                <!-- Logout Button -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_employer_logout"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="32dp"
+                    android:text="Logout from Account"
+                    android:backgroundTint="#6C757D"
+                    android:padding="12dp"
+                    app:cornerRadius="8dp"/>
+            </LinearLayout>
+        </ScrollView>
+
+    </FrameLayout>
+
+    <com.google.android.material.bottomnavigation.BottomNavigationView
+        android:id="@+id/employer_bottom_navigation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:background="@android:color/white"
+        app:menu="@menu/employer_nav_menu"
+        app:itemIconTint="@color/nav_item_color"
+        app:itemTextColor="@color/nav_item_color"/>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

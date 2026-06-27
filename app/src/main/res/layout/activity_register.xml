@@ -82,6 +82,43 @@
                 android:orientation="vertical"
                 android:padding="24dp">
 
+                <!-- Role Selection -->
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Register As"
+                    android:textColor="#6C757D"
+                    android:textSize="14sp"
+                    android:textStyle="bold"/>
+
+                <RadioGroup
+                    android:id="@+id/rg_role"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginTop="8dp"
+                    android:layout_marginBottom="16dp">
+                    
+                    <RadioButton
+                        android:id="@+id/rb_freelancer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Freelancer"
+                        android:checked="true"
+                        android:textSize="14sp"
+                        android:textColor="#14213d"/>
+                        
+                    <RadioButton
+                        android:id="@+id/rb_employer"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Employer"
+                        android:textSize="14sp"
+                        android:textColor="#14213d"/>
+                </RadioGroup>
+
                 <!-- Full Name -->
                 <TextView
                     android:layout_width="wrap_content"
@@ -96,7 +133,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:hintEnabled="false"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.App.TextInputLayout">
                     
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_register_name"
@@ -125,7 +162,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:hintEnabled="false"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.App.TextInputLayout">
                     
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_register_email"
@@ -154,7 +191,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:hintEnabled="false"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                    style="@style/Widget.App.TextInputLayout"
                     app:passwordToggleEnabled="true"
                     app:passwordToggleTint="#ADB5BD">
                     
@@ -172,6 +209,7 @@
 
                 <!-- Skills / Professional Bio -->
                 <TextView
+                    android:id="@+id/tv_register_skills_label"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="16dp"
@@ -185,7 +223,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     app:hintEnabled="false"
-                    style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                    style="@style/Widget.App.TextInputLayout">
                     
                     <com.google.android.material.textfield.TextInputEditText
                         android:id="@+id/et_register_skills"

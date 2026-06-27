@@ -90,7 +90,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:hintEnabled="false"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+                style="@style/Widget.App.TextInputLayout">
                 
                 <com.google.android.material.textfield.TextInputEditText
                     android:id="@+id/et_username"
@@ -133,7 +133,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 app:hintEnabled="false"
-                style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+                style="@style/Widget.App.TextInputLayout"
                 app:passwordToggleEnabled="true"
                 app:passwordToggleTint="#ADB5BD">
                 
@@ -176,7 +176,7 @@
                 style="@style/Widget.MaterialComponents.Button.OutlinedButton"
                 android:layout_width="match_parent"
                 android:layout_height="60dp"
-                android:text="Sign Up as Freelancer"
+                android:text="Create an Account"
                 android:textAllCaps="false"
                 android:textSize="16sp"
                 android:textStyle="bold"

@@ -86,6 +86,19 @@
                         android:textSize="14sp"/>
                 </LinearLayout>
 
+                <TextView
+                    android:id="@+id/tv_detail_deadline"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="Apply Before: 2026-07-31"
+                    android:textColor="#DC3545"
+                    android:textSize="13sp"
+                    android:textStyle="bold"
+                    android:background="#FDF2F2"
+                    android:paddingHorizontal="10dp"
+                    android:paddingVertical="4dp"/>
+
                 <!-- Job Description Card -->
                 <com.google.android.material.card.MaterialCardView
                     android:layout_width="match_parent"

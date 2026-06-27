@@ -28,8 +28,12 @@ public class LoginActivity extends AppCompatActivity {
                 Intent intent = new Intent(LoginActivity.this, FreelancerDashboardActivity.class);
                 startActivity(intent);
                 finish();
+            } else if ("employer".equals(username)) {
+                Intent intent = new Intent(LoginActivity.this, EmployerDashboardActivity.class);
+                startActivity(intent);
+                finish();
             } else {
-                Toast.makeText(LoginActivity.this, "Invalid credentials (try 'admin' or 'freelancer')", Toast.LENGTH_SHORT).show();
+                Toast.makeText(LoginActivity.this, "Invalid credentials (try 'admin', 'freelancer', or 'employer')", Toast.LENGTH_SHORT).show();
             }
         });
 

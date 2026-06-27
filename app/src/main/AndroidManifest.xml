@@ -45,6 +45,9 @@
             android:name=".FreelancerDashboardActivity"
             android:exported="false" />
         <activity
+            android:name=".EmployerDashboardActivity"
+            android:exported="false" />
+        <activity
             android:name=".JobDetailsActivity"
             android:exported="false" />
         <activity

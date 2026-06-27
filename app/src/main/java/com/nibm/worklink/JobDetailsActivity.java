@@ -41,11 +41,13 @@ public class JobDetailsActivity extends AppCompatActivity {
         TextView tvTitle = findViewById(R.id.tv_detail_title);
         TextView tvCategory = findViewById(R.id.tv_detail_category);
         TextView tvSalary = findViewById(R.id.tv_detail_salary);
+        TextView tvDeadline = findViewById(R.id.tv_detail_deadline);
         TextView tvDesc = findViewById(R.id.tv_detail_desc);
 
         tvTitle.setText(currentJob.getTitle());
         tvCategory.setText(currentJob.getCategory());
         tvSalary.setText(currentJob.getSalary());
+        tvDeadline.setText("Apply Before: " + currentJob.getDeadline());
         tvDesc.setText(currentJob.getDescription());
 
         // Bind Employer Views

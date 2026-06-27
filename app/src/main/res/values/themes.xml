@@ -2,8 +2,28 @@
     <!-- Base application theme. -->
     <style name="Base.Theme.WorkLink" parent="Theme.Material3.DayNight.NoActionBar">
         <!-- Customize your light theme here. -->
-        <!-- <item name="colorPrimary">@color/my_light_primary</item> -->
+        <item name="colorPrimary">#000000</item>
+        <item name="colorOutline">#000000</item>
+        <item name="colorOnSurface">#000000</item>
+        <item name="colorOnSurfaceVariant">#000000</item>
+        
+        <!-- Global Text Input Layout & EditText style -->
+        <item name="textInputStyle">@style/Widget.App.TextInputLayout</item>
+        <item name="editTextStyle">@style/Widget.App.EditText</item>
     </style>
 
     <style name="Theme.WorkLink" parent="Base.Theme.WorkLink" />
+
+    <!-- Style for TextInputLayout -->
+    <style name="Widget.App.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">#000000</item>
+        <item name="android:textColorHint">#666666</item>
+        <item name="hintTextColor">#000000</item>
+    </style>
+
+    <!-- Style for EditText -->
+    <style name="Widget.App.EditText" parent="Widget.MaterialComponents.TextInputEditText.OutlinedBox">
+        <item name="android:textColor">#000000</item>
+        <item name="android:textColorHint">#666666</item>
+    </style>
 </resources>
