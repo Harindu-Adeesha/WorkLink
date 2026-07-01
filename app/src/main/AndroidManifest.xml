@@ -53,6 +53,12 @@
         <activity
             android:name=".ApplyJobActivity"
             android:exported="false" />
+        <activity
+            android:name=".RecruiterDashboardActivity"
+            android:exported="false" />
+        <activity
+            android:name=".JobActionActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

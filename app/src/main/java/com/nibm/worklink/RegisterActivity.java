@@ -32,6 +32,9 @@ public class RegisterActivity extends AppCompatActivity {
             if (checkedId == R.id.rb_employer) {
                 tvSkillsLabel.setText("Company Description / Bio");
                 etSkills.setHint("e.g. Leading software engineering company...");
+            } else if (checkedId == R.id.rb_recruiter) {
+                tvSkillsLabel.setText("Recruitment Agency / Bio");
+                etSkills.setHint("e.g. Tech Talent Acquisition...");
             } else {
                 tvSkillsLabel.setText("Skills / Area of Expertise");
                 etSkills.setHint("Kotlin, Android, Figma, Java...");
@@ -65,6 +68,14 @@ public class RegisterActivity extends AppCompatActivity {
 
                 // Go to Employer Dashboard
                 Intent intent = new Intent(RegisterActivity.this, EmployerDashboardActivity.class);
+                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                startActivity(intent);
+                finish();
+            } else if (checkedId == R.id.rb_recruiter) {
+                Toast.makeText(RegisterActivity.this, "Recruiter Registration Successful! Welcome " + name, Toast.LENGTH_LONG).show();
+
+                // Go to Recruiter Dashboard
+                Intent intent = new Intent(RegisterActivity.this, RecruiterDashboardActivity.class);
                 intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(intent);
                 finish();

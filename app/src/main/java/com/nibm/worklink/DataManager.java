@@ -183,6 +183,14 @@ public class DataManager {
                 "$110k - $135k / year", "Software Development",
                 "Spotify is a digital music, podcast, and video service that gives you access to millions of songs.",
                 4.9f, "jobs@spotify.com", "2026-07-25"));
+
+        // Hardcoded Reviews (simulating reviews submitted by Freelancers)
+        reviews.add(new Review("1", "1", 5.0f, "Google was an amazing client! Project scope was crystal clear and payments were prompt. Highly recommend."));
+        reviews.add(new Review("2", "1", 4.5f, "Excellent communication throughout the project. The team at Google was very responsive and professional."));
+        reviews.add(new Review("3", "2", 4.0f, "Figma had a well-structured brief. Minor changes were requested midway but overall a great experience."));
+        reviews.add(new Review("4", "2", 3.5f, "Good opportunity but requirements shifted a bit during the project. Communication could have been better."));
+        reviews.add(new Review("5", "3", 5.0f, "Medium's editorial team was fantastic to work with. Clear guidelines and very supportive feedback."));
+        reviews.add(new Review("6", "4", 4.8f, "Netflix provided a very professional environment. Well-defined goals and the pay was on time."));
     }
 
     // Accessors
