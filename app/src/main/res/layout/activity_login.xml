@@ -24,13 +24,12 @@
         <FrameLayout
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:background="#1B2238"
-            android:padding="12dp">
+            android:padding="4dp">
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@android:drawable/ic_secure"
-                app:tint="#0D6EFD"/>
+                android:src="@drawable/logo"
+                android:scaleType="centerInside" />
         </FrameLayout>
             
         <TextView

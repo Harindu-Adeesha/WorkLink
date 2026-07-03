@@ -19,7 +19,14 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:navigationIcon="@android:drawable/ic_menu_sort_by_size">
+            >
+            <ImageView
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:layout_marginEnd="12dp"
+                android:layout_gravity="center_vertical"
+                android:src="@drawable/logo"
+                android:scaleType="centerInside"/>
             
             <TextView
                 android:layout_width="wrap_content"
@@ -541,3 +548,4 @@
         app:itemTextColor="@color/nav_item_color"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+

@@ -21,15 +21,14 @@
         app:layout_constraintEnd_toEndOf="parent">
         
         <FrameLayout
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:background="#1B2238"
-            android:padding="10dp">
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:padding="4dp">
             <ImageView
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:src="@android:drawable/ic_menu_myplaces"
-                app:tint="#0D6EFD"/>
+                android:src="@drawable/logo"
+                android:scaleType="centerInside" />
         </FrameLayout>
             
         <TextView
