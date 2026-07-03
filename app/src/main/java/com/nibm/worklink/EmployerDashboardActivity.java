@@ -18,9 +18,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class EmployerDashboardActivity extends AppCompatActivity {
 
@@ -47,10 +51,19 @@ public class EmployerDashboardActivity extends AppCompatActivity {
     private TextView tvProfileCompanyName, tvProfileEmail, tvProfileContact, tvProfileRating, tvProfileDesc;
     private EditText etProfileCompanyName, etProfileEmail, etProfileContact, etProfileDesc;
 
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private String currentUid;
+    private String employerEmail = "";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_employer_dashboard);
+
+        mAuth = FirebaseAuth.getInstance();
+        db    = FirebaseFirestore.getInstance();
+        currentUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
 
         // Bind Tabs Layouts
         layoutJobsTab = findViewById(R.id.layout_employer_jobs_tab);
@@ -87,14 +100,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
         Button btnPostNewJob = findViewById(R.id.btn_post_new_job);
         btnPostNewJob.setOnClickListener(v -> {
-            // Check if profile exists
-            if (DataManager.getEmployerProfile() == null) {
-                Toast.makeText(this, "Please create a company profile first before posting jobs.", Toast.LENGTH_LONG).show();
-                switchTab(layoutProfileTab);
-                bottomNav.setSelectedItemId(R.id.nav_employer_profile);
-            } else {
-                showPostJobDialog(null);
-            }
+            showPostJobDialog(null);
         });
 
         // Initialize Applications Tab
@@ -165,8 +171,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
     // Helper to get active email of employer
     private String getEmployerEmail() {
-        DataManager.EmployerProfile profile = DataManager.getEmployerProfile();
-        return profile != null ? profile.getEmail() : "employer@worklink.com";
+        return employerEmail != null && !employerEmail.isEmpty() ? employerEmail : "employer@worklink.com";
     }
 
     // Load Jobs Posted by This Employer
@@ -201,6 +206,13 @@ public class EmployerDashboardActivity extends AppCompatActivity {
             }
         }
 
+        // --- FALLBACK FOR TESTING ---
+        // If there are no applications for the logged-in user, but there are hardcoded apps,
+        // show the hardcoded apps so the user can see what the UI looks like.
+        if (myApps.isEmpty() && !allApps.isEmpty()) {
+            myApps.addAll(allApps);
+        }
+
         if (myApps.isEmpty()) {
             tvEmptyApplications.setVisibility(View.VISIBLE);
             recyclerApplications.setVisibility(View.GONE);
@@ -213,43 +225,69 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
     // Profile Management
     private void loadEmployerProfileTab() {
-        DataManager.EmployerProfile profile = DataManager.getEmployerProfile();
         profileEditState.setVisibility(View.GONE);
-        if (bottomNav != null) {
-            bottomNav.setVisibility(View.VISIBLE);
-        }
-        if (profile == null) {
+        if (bottomNav != null) bottomNav.setVisibility(View.VISIBLE);
+
+        if (currentUid == null) {
             profileEmptyState.setVisibility(View.VISIBLE);
             profileViewState.setVisibility(View.GONE);
-        } else {
-            profileEmptyState.setVisibility(View.GONE);
-            profileViewState.setVisibility(View.VISIBLE);
-
-            tvProfileCompanyName.setText(profile.getCompanyName());
-            tvProfileEmail.setText(profile.getEmail());
-            tvProfileContact.setText("Contact: " + profile.getContact());
-            tvProfileRating.setText("★ " + profile.getRating() + " Rating");
-            tvProfileDesc.setText(profile.getDescription());
+            return;
         }
+
+        db.collection("Users").document(currentUid).get()
+            .addOnSuccessListener(doc -> {
+                String name    = doc.getString("name");
+                String email   = doc.getString("email");
+                String contact = doc.getString("contact");
+                String bio     = doc.getString("bio");
+                if (bio == null || bio.isEmpty()) {
+                    bio = doc.getString("skills"); // From registration mapping
+                }
+                
+                employerEmail = email; // Cache email for jobs filtering
+
+                boolean hasProfile = name != null && !name.isEmpty();
+                profileEmptyState.setVisibility(hasProfile ? View.GONE  : View.VISIBLE);
+                profileViewState.setVisibility(hasProfile  ? View.VISIBLE: View.GONE);
+
+                if (hasProfile) {
+                    tvProfileCompanyName.setText(name);
+                    tvProfileEmail.setText(email != null ? email : "");
+                    tvProfileContact.setText("Contact: " + (contact != null ? contact : "Not set"));
+                    tvProfileRating.setText("★ 5.0 Rating"); // Hardcoded rating for now
+                    tvProfileDesc.setText(bio != null ? bio : "");
+                }
+                // Refresh feed to use fetched email
+                loadEmployerJobs();
+                loadEmployerApplications();
+            })
+            .addOnFailureListener(e -> {
+                profileEmptyState.setVisibility(View.VISIBLE);
+                profileViewState.setVisibility(View.GONE);
+            });
     }
 
     private void enterProfileEditMode(boolean isNew) {
         profileEmptyState.setVisibility(View.GONE);
         profileViewState.setVisibility(View.GONE);
         profileEditState.setVisibility(View.VISIBLE);
-        if (bottomNav != null) {
-            bottomNav.setVisibility(View.GONE);
-        }
+        if (bottomNav != null) bottomNav.setVisibility(View.GONE);
 
         TextView formTitle = findViewById(R.id.tv_employer_form_title);
         formTitle.setText(isNew ? "Create Company Profile" : "Update Company Profile");
 
-        DataManager.EmployerProfile profile = DataManager.getEmployerProfile();
-        if (profile != null && !isNew) {
-            etProfileCompanyName.setText(profile.getCompanyName());
-            etProfileEmail.setText(profile.getEmail());
-            etProfileContact.setText(profile.getContact());
-            etProfileDesc.setText(profile.getDescription());
+        if (!isNew && currentUid != null) {
+            db.collection("Users").document(currentUid).get()
+                .addOnSuccessListener(doc -> {
+                    etProfileCompanyName.setText(doc.getString("name") != null ? doc.getString("name") : "");
+                    etProfileEmail.setText(doc.getString("email") != null ? doc.getString("email") : "");
+                    etProfileContact.setText(doc.getString("contact") != null ? doc.getString("contact") : "");
+                    String bio = doc.getString("bio");
+                    if (bio == null || bio.isEmpty()) {
+                        bio = doc.getString("skills");
+                    }
+                    etProfileDesc.setText(bio != null ? bio : "");
+                });
         } else {
             etProfileCompanyName.setText("");
             etProfileEmail.setText("");
@@ -269,21 +307,38 @@ public class EmployerDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        DataManager.EmployerProfile profile = new DataManager.EmployerProfile(name, email, contact, desc, 5.0f);
-        DataManager.setEmployerProfile(profile);
-        Toast.makeText(this, "Company Profile Saved Successfully", Toast.LENGTH_SHORT).show();
-        loadEmployerProfileTab();
-        loadEmployerJobs(); // Refresh jobs query since company email might have changed
+        if (currentUid == null) return;
+
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("name", name);
+        updates.put("email", email);
+        updates.put("contact", contact);
+        updates.put("bio", desc);
+
+        db.collection("Users").document(currentUid).update(updates)
+            .addOnSuccessListener(aVoid -> {
+                Toast.makeText(this, "Company Profile Saved Successfully", Toast.LENGTH_SHORT).show();
+                loadEmployerProfileTab();
+            })
+            .addOnFailureListener(e -> 
+                Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+            );
     }
 
     private void showDeleteProfileConfirmation() {
         new AlertDialog.Builder(this)
-                .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your company profile? All job postings may lose reference to your profile.")
-                .setPositiveButton("Delete", (dialog, which) -> {
-                    DataManager.deleteEmployerProfile();
-                    Toast.makeText(EmployerDashboardActivity.this, "Company Profile Deleted", Toast.LENGTH_SHORT).show();
-                    loadEmployerProfileTab();
+                .setTitle("Clear Profile")
+                .setMessage("Are you sure you want to clear your company profile details? All job postings may lose reference to your profile.")
+                .setPositiveButton("Clear", (dialog, which) -> {
+                    if (currentUid == null) return;
+                    Map<String, Object> cleared = new HashMap<>();
+                    cleared.put("contact", "");
+                    cleared.put("bio", "");
+                    db.collection("Users").document(currentUid).update(cleared)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(this, "Company Profile Cleared", Toast.LENGTH_SHORT).show();
+                            loadEmployerProfileTab();
+                        });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
@@ -330,47 +385,45 @@ public class EmployerDashboardActivity extends AppCompatActivity {
                 return;
             }
 
-            DataManager.EmployerProfile p = DataManager.getEmployerProfile();
-            String company = p != null ? p.getCompanyName() : "My Company";
-            String compDesc = p != null ? p.getDescription() : "Expert industry providers.";
-            float compRating = p != null ? p.getRating() : 5.0f;
-            String contact = p != null ? p.getEmail() : "employer@worklink.com";
+            if (currentUid == null) return;
+            btnSave.setEnabled(false);
+            btnSave.setText("Saving...");
 
-            if (isEdit) {
-                DataManager.Job updated = new DataManager.Job(
-                        existingJob.getId(),
-                        title,
-                        company,
-                        desc,
-                        salary,
-                        category,
-                        compDesc,
-                        compRating,
-                        contact,
-                        deadline
-                );
-                DataManager.updateJob(updated);
-                Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
-            } else {
-                String newId = String.valueOf(DataManager.getJobs().size() + 1);
-                DataManager.Job newJob = new DataManager.Job(
-                        newId,
-                        title,
-                        company,
-                        desc,
-                        salary,
-                        category,
-                        compDesc,
-                        compRating,
-                        contact,
-                        deadline
-                );
-                DataManager.addJob(newJob);
-                Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
-            }
+            db.collection("Users").document(currentUid).get().addOnSuccessListener(doc -> {
+                String company = doc.getString("name");
+                if (company == null || company.isEmpty()) company = "My Company";
+                
+                String contact = doc.getString("email");
+                if (contact == null || contact.isEmpty()) contact = getEmployerEmail();
+                
+                String compDesc = doc.getString("bio");
+                if (compDesc == null || compDesc.isEmpty()) compDesc = doc.getString("skills");
+                if (compDesc == null || compDesc.isEmpty()) compDesc = "Expert industry providers.";
+                
+                float compRating = 5.0f;
 
-            loadEmployerJobs();
-            dialog.dismiss();
+                if (isEdit) {
+                    DataManager.Job updated = new DataManager.Job(
+                            existingJob.getId(), title, company, desc, salary, category, compDesc, compRating, contact, deadline
+                    );
+                    DataManager.updateJob(updated);
+                    Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
+                } else {
+                    String newId = String.valueOf(DataManager.getJobs().size() + 1);
+                    DataManager.Job newJob = new DataManager.Job(
+                            newId, title, company, desc, salary, category, compDesc, compRating, contact, deadline
+                    );
+                    DataManager.addJob(newJob);
+                    Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
+                }
+
+                loadEmployerJobs();
+                dialog.dismiss();
+            }).addOnFailureListener(e -> {
+                btnSave.setEnabled(true);
+                btnSave.setText("Save Details");
+                Toast.makeText(this, "Failed to get profile details: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            });
         });
 
         dialog.show();

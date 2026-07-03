@@ -2,29 +2,43 @@ package com.nibm.worklink;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class RegisterActivity extends AppCompatActivity {
+
+    private static final String TAG = "RegisterActivity";
+
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_register);
 
-        EditText etName = findViewById(R.id.et_register_name);
-        EditText etEmail = findViewById(R.id.et_register_email);
+        mAuth = FirebaseAuth.getInstance();
+        db    = FirebaseFirestore.getInstance();
+
+        EditText etName     = findViewById(R.id.et_register_name);
+        EditText etEmail    = findViewById(R.id.et_register_email);
         EditText etPassword = findViewById(R.id.et_register_password);
-        EditText etSkills = findViewById(R.id.et_register_skills);
-        Button btnRegister = findViewById(R.id.btn_register);
+        EditText etSkills   = findViewById(R.id.et_register_skills);
+        Button btnRegister  = findViewById(R.id.btn_register);
         TextView tvBackToLogin = findViewById(R.id.tv_back_to_login);
-        
+
         RadioGroup rgRole = findViewById(R.id.rg_role);
         TextView tvSkillsLabel = findViewById(R.id.tv_register_skills_label);
 
@@ -42,67 +56,109 @@ public class RegisterActivity extends AppCompatActivity {
         });
 
         btnRegister.setOnClickListener(v -> {
-            String name = etName.getText().toString().trim();
-            String email = etEmail.getText().toString().trim();
+            String name     = etName.getText().toString().trim();
+            String email    = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
-            String skills = etSkills.getText().toString().trim();
+            String skills   = etSkills.getText().toString().trim();
 
-            if (name.isEmpty() || email.isEmpty() || password.isEmpty()) {
-                Toast.makeText(RegisterActivity.this, "Please fill in all required fields", Toast.LENGTH_SHORT).show();
-                return;
+            // --- All validation BEFORE any Firebase call ---
+            boolean hasError = false;
+
+            if (name.isEmpty()) {
+                etName.setError("Full name is required");
+                hasError = true;
+            } else {
+                etName.setError(null);
             }
+
+            if (email.isEmpty()) {
+                etEmail.setError("Email is required");
+                hasError = true;
+            } else if (!android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
+                etEmail.setError("Enter a valid email address");
+                hasError = true;
+            } else {
+                etEmail.setError(null);
+            }
+
+            if (password.isEmpty()) {
+                etPassword.setError("Password is required");
+                hasError = true;
+            } else if (password.length() < 6) {
+                etPassword.setError("Password must be at least 6 characters");
+                hasError = true;
+            } else {
+                etPassword.setError(null);
+            }
+
+            // Stop here — Firebase is NEVER called if any field is invalid
+            if (hasError) return;
 
             int checkedId = rgRole.getCheckedRadioButtonId();
-            if (checkedId == R.id.rb_employer) {
-                // Create Employer Profile in DataManager
-                DataManager.EmployerProfile mockProfile = new DataManager.EmployerProfile(
-                        name,
-                        email,
-                        "071-1234567",
-                        skills.isEmpty() ? "Leading provider of professional services." : skills,
-                        5.0f
-                );
-                DataManager.setEmployerProfile(mockProfile);
+            String role = "Freelancer";
+            if (checkedId == R.id.rb_employer)       role = "Employer";
+            else if (checkedId == R.id.rb_recruiter) role = "Recruiter";
 
-                Toast.makeText(RegisterActivity.this, "Employer Registration Successful! Welcome " + name, Toast.LENGTH_LONG).show();
+            final String finalRole   = role;
+            final String finalName   = name;
+            final String finalEmail  = email;
+            final String finalSkills = skills;
 
-                // Go to Employer Dashboard
-                Intent intent = new Intent(RegisterActivity.this, EmployerDashboardActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            } else if (checkedId == R.id.rb_recruiter) {
-                Toast.makeText(RegisterActivity.this, "Recruiter Registration Successful! Welcome " + name, Toast.LENGTH_LONG).show();
+            btnRegister.setEnabled(false);
+            btnRegister.setText("Registering...");
 
-                // Go to Recruiter Dashboard
-                Intent intent = new Intent(RegisterActivity.this, RecruiterDashboardActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            } else {
-                // Create Freelancer Profile in DataManager
-                DataManager.Profile mockProfile = new DataManager.Profile(
-                        name,
-                        email,
-                        "Freelance Consultant",
-                        "Experienced freelancer specialized in creative solutions and professional delivery.",
-                        skills.isEmpty() ? "Generalist" : skills,
-                        "$45.00 / hr"
-                );
-                DataManager.setProfile(mockProfile);
+            // Step 1: Create Firebase Auth account
+            mAuth.createUserWithEmailAndPassword(email, password)
+                .addOnCompleteListener(this, authTask -> {
+                    if (!authTask.isSuccessful()) {
+                        btnRegister.setEnabled(true);
+                        btnRegister.setText("Register Account ➔");
+                        String errMsg = authTask.getException() != null
+                                ? authTask.getException().getMessage()
+                                : "Registration failed";
+                        Toast.makeText(this, errMsg, Toast.LENGTH_LONG).show();
+                        return;
+                    }
 
-                Toast.makeText(RegisterActivity.this, "Registration Successful! Welcome " + name, Toast.LENGTH_LONG).show();
+                    // Step 2: Auth succeeded — navigate to dashboard immediately
+                    String uid = mAuth.getCurrentUser().getUid();
+                    Log.d(TAG, "Auth created UID=" + uid + ", routing to dashboard.");
+                    Toast.makeText(this, "Welcome, " + finalName + "!", Toast.LENGTH_SHORT).show();
+                    routeToDashboard(finalRole);
 
-                // Go to Freelancer Dashboard
-                Intent intent = new Intent(RegisterActivity.this, FreelancerDashboardActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(intent);
-                finish();
-            }
+                    // Step 3: Save profile to Firestore in background
+                    Map<String, Object> userMap = new HashMap<>();
+                    userMap.put("name", finalName);
+                    userMap.put("email", finalEmail);
+                    userMap.put("role", finalRole);
+                    if ("Employer".equals(finalRole) || "Recruiter".equals(finalRole)) {
+                        userMap.put("bio", finalSkills);
+                    } else {
+                        userMap.put("skills", finalSkills);
+                    }
+
+                    db.collection("Users").document(uid).set(userMap)
+                        .addOnSuccessListener(aVoid ->
+                            Log.d(TAG, "User profile saved to Firestore."))
+                        .addOnFailureListener(e ->
+                            Log.e(TAG, "Firestore write failed: " + e.getMessage()));
+                });
         });
 
-        tvBackToLogin.setOnClickListener(v -> {
-            finish(); // Go back to login screen
-        });
+        tvBackToLogin.setOnClickListener(v -> finish());
+    }
+
+    private void routeToDashboard(String role) {
+        Intent intent;
+        if ("Employer".equals(role)) {
+            intent = new Intent(this, EmployerDashboardActivity.class);
+        } else if ("Recruiter".equals(role)) {
+            intent = new Intent(this, RecruiterDashboardActivity.class);
+        } else {
+            intent = new Intent(this, FreelancerDashboardActivity.class);
+        }
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+        startActivity(intent);
+        finish();
     }
 }

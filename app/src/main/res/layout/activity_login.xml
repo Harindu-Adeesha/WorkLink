@@ -80,7 +80,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Username/Email"
+                android:text="Email Address"
                 android:textColor="#6C757D"
                 android:textSize="14sp"
                 android:textStyle="bold"/>
@@ -96,7 +96,7 @@
                     android:id="@+id/et_username"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:hint="Enter your admin credentials"
+                    android:hint="name@example.com"
                     android:textColor="#000000"
                     android:textColorHint="#ADB5BD"
                     android:drawableStart="@android:drawable/ic_menu_myplaces"
@@ -138,6 +138,7 @@
                 app:passwordToggleTint="#ADB5BD">
                 
                 <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/et_password"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:hint="••••••••"

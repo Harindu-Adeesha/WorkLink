@@ -46,21 +46,33 @@
             android:padding="20dp"/>
             
         <TextView
+            android:id="@+id/tv_profile_name"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Admin User"
+            android:text="Loading..."
             android:textSize="24sp"
             android:textStyle="bold"
             android:textColor="#14213d"/>
             
         <TextView
+            android:id="@+id/tv_profile_email"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="admin@worklink.com"
+            android:text=""
             android:textSize="16sp"
             android:textColor="#6C757D"/>
+
+        <TextView
+            android:id="@+id/tv_profile_role"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:text=""
+            android:textSize="14sp"
+            android:textColor="#035DD6"
+            android:textStyle="bold"/>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_logout"

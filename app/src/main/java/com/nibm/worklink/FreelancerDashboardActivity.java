@@ -19,8 +19,12 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.chip.ChipGroup;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class FreelancerDashboardActivity extends AppCompatActivity {
 
@@ -47,10 +51,18 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
     private TextView tvProfileName, tvProfileTitle, tvProfileRate, tvProfileBio, tvProfileSkills;
     private EditText etProfileName, etProfileTitle, etProfileRate, etProfileBio, etProfileSkills;
 
+    private FirebaseAuth mAuth;
+    private FirebaseFirestore db;
+    private String currentUid;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_freelancer_dashboard);
+
+        mAuth = FirebaseAuth.getInstance();
+        db    = FirebaseFirestore.getInstance();
+        currentUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
 
         // Bind Tabs Layouts
         layoutJobsTab = findViewById(R.id.layout_jobs_tab);
@@ -194,44 +206,59 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
     // Profile Functions
     private void loadProfileTab() {
-        DataManager.Profile profile = DataManager.getProfile();
         profileEditState.setVisibility(View.GONE);
-        if (bottomNav != null) {
-            bottomNav.setVisibility(View.VISIBLE);
-        }
-        if (profile == null) {
+        if (bottomNav != null) bottomNav.setVisibility(View.VISIBLE);
+
+        if (currentUid == null) {
             profileEmptyState.setVisibility(View.VISIBLE);
             profileViewState.setVisibility(View.GONE);
-        } else {
-            profileEmptyState.setVisibility(View.GONE);
-            profileViewState.setVisibility(View.VISIBLE);
-
-            tvProfileName.setText(profile.getName());
-            tvProfileTitle.setText(profile.getTitle());
-            tvProfileRate.setText(profile.getHourlyRate());
-            tvProfileBio.setText(profile.getBio());
-            tvProfileSkills.setText(profile.getSkills());
+            return;
         }
+
+        db.collection("Users").document(currentUid).get()
+            .addOnSuccessListener(doc -> {
+                String name   = doc.getString("name");
+                String skills = doc.getString("skills");
+                String title  = doc.getString("title");
+                String rate   = doc.getString("hourlyRate");
+                String bio    = doc.getString("bio");
+
+                boolean hasProfile = name != null && !name.isEmpty();
+                profileEmptyState.setVisibility(hasProfile ? View.GONE  : View.VISIBLE);
+                profileViewState.setVisibility(hasProfile  ? View.VISIBLE: View.GONE);
+
+                if (hasProfile) {
+                    tvProfileName.setText(name);
+                    tvProfileTitle.setText(title  != null ? title  : "");
+                    tvProfileRate.setText(rate    != null ? rate   : "");
+                    tvProfileBio.setText(bio      != null ? bio    : "");
+                    tvProfileSkills.setText(skills != null ? skills : "");
+                }
+            })
+            .addOnFailureListener(e -> {
+                profileEmptyState.setVisibility(View.VISIBLE);
+                profileViewState.setVisibility(View.GONE);
+            });
     }
 
     private void enterProfileEditMode(boolean isNew) {
         profileEmptyState.setVisibility(View.GONE);
         profileViewState.setVisibility(View.GONE);
         profileEditState.setVisibility(View.VISIBLE);
-        if (bottomNav != null) {
-            bottomNav.setVisibility(View.GONE);
-        }
+        if (bottomNav != null) bottomNav.setVisibility(View.GONE);
 
         TextView formTitle = findViewById(R.id.tv_form_title);
         formTitle.setText(isNew ? "Create Freelancer Profile" : "Update Freelancer Profile");
 
-        DataManager.Profile profile = DataManager.getProfile();
-        if (profile != null && !isNew) {
-            etProfileName.setText(profile.getName());
-            etProfileTitle.setText(profile.getTitle());
-            etProfileRate.setText(profile.getHourlyRate());
-            etProfileBio.setText(profile.getBio());
-            etProfileSkills.setText(profile.getSkills());
+        if (!isNew && currentUid != null) {
+            db.collection("Users").document(currentUid).get()
+                .addOnSuccessListener(doc -> {
+                    etProfileName.setText(doc.getString("name")   != null ? doc.getString("name")      : "");
+                    etProfileTitle.setText(doc.getString("title")  != null ? doc.getString("title")     : "");
+                    etProfileRate.setText(doc.getString("hourlyRate") != null ? doc.getString("hourlyRate") : "$");
+                    etProfileBio.setText(doc.getString("bio")     != null ? doc.getString("bio")      : "");
+                    etProfileSkills.setText(doc.getString("skills")!= null ? doc.getString("skills")   : "");
+                });
         } else {
             etProfileName.setText("");
             etProfileTitle.setText("");
@@ -242,10 +269,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
     }
 
     private void saveProfileData() {
-        String name = etProfileName.getText().toString().trim();
-        String title = etProfileTitle.getText().toString().trim();
-        String rate = etProfileRate.getText().toString().trim();
-        String bio = etProfileBio.getText().toString().trim();
+        String name   = etProfileName.getText().toString().trim();
+        String title  = etProfileTitle.getText().toString().trim();
+        String rate   = etProfileRate.getText().toString().trim();
+        String bio    = etProfileBio.getText().toString().trim();
         String skills = etProfileSkills.getText().toString().trim();
 
         if (name.isEmpty() || title.isEmpty() || rate.isEmpty()) {
@@ -253,24 +280,41 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
             return;
         }
 
-        DataManager.Profile profile = new DataManager.Profile(name, emailOrMock(name), title, bio, skills, rate);
-        DataManager.setProfile(profile);
-        Toast.makeText(this, "Profile Saved Successfully", Toast.LENGTH_SHORT).show();
-        loadProfileTab();
-    }
+        if (currentUid == null) return;
 
-    private String emailOrMock(String name) {
-        return name.toLowerCase().replace(" ", "") + "@worklink.com";
+        Map<String, Object> updates = new HashMap<>();
+        updates.put("name", name);
+        updates.put("title", title);
+        updates.put("hourlyRate", rate);
+        updates.put("bio", bio);
+        updates.put("skills", skills);
+
+        db.collection("Users").document(currentUid).update(updates)
+            .addOnSuccessListener(aVoid -> {
+                Toast.makeText(this, "Profile Saved Successfully", Toast.LENGTH_SHORT).show();
+                loadProfileTab();
+            })
+            .addOnFailureListener(e ->
+                Toast.makeText(this, "Save failed: " + e.getMessage(), Toast.LENGTH_SHORT).show()
+            );
     }
 
     private void showDeleteProfileConfirmation() {
         new AlertDialog.Builder(this)
                 .setTitle("Delete Profile")
-                .setMessage("Are you sure you want to delete your freelancer profile? You will not be able to apply to new jobs without a profile.")
+                .setMessage("Are you sure you want to delete your freelancer profile details?")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    DataManager.deleteProfile();
-                    Toast.makeText(FreelancerDashboardActivity.this, "Profile Deleted", Toast.LENGTH_SHORT).show();
-                    loadProfileTab();
+                    if (currentUid == null) return;
+                    Map<String, Object> cleared = new HashMap<>();
+                    cleared.put("title", "");
+                    cleared.put("hourlyRate", "");
+                    cleared.put("bio", "");
+                    cleared.put("skills", "");
+                    db.collection("Users").document(currentUid).update(cleared)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(this, "Profile Cleared", Toast.LENGTH_SHORT).show();
+                            loadProfileTab();
+                        });
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

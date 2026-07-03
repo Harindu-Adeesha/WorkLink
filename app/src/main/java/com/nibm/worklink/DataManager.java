@@ -191,6 +191,11 @@ public class DataManager {
         reviews.add(new Review("4", "2", 3.5f, "Good opportunity but requirements shifted a bit during the project. Communication could have been better."));
         reviews.add(new Review("5", "3", 5.0f, "Medium's editorial team was fantastic to work with. Clear guidelines and very supportive feedback."));
         reviews.add(new Review("6", "4", 4.8f, "Netflix provided a very professional environment. Well-defined goals and the pay was on time."));
+        
+        // Hardcoded Applications
+        applications.add(new Application("1", jobs.get(0), "I have 5 years of Android experience. My email is john.doe@example.com.", "john_doe_resume.pdf", "Pending"));
+        applications.add(new Application("2", jobs.get(1), "UI/UX designer with a passion for clean interfaces. Contact: jane.smith@example.com", "jane_smith_resume.pdf", "Accepted"));
+        applications.add(new Application("3", jobs.get(0), "Kotlin expert here. Email: mike.j@example.com", "mike_j_resume.pdf", "Rejected"));
     }
 
     // Accessors

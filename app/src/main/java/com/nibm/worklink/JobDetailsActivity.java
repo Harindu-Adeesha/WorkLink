@@ -63,26 +63,9 @@ public class JobDetailsActivity extends AppCompatActivity {
 
         Button btnApply = findViewById(R.id.btn_apply);
         btnApply.setOnClickListener(v -> {
-            // Check if profile exists
-            if (DataManager.getProfile() == null) {
-                // Prompt user to create profile
-                new AlertDialog.Builder(this)
-                        .setTitle("Profile Required")
-                        .setMessage("You must create a freelancer profile before you can apply for jobs. Would you like to set up your profile now?")
-                        .setPositiveButton("Create Profile", (dialog, which) -> {
-                            // Redirect to Dashboard (which will load Profile Tab in edit mode or direct them)
-                            Intent intent = new Intent(JobDetailsActivity.this, FreelancerDashboardActivity.class);
-                            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                            startActivity(intent);
-                            finish();
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
-            } else {
-                Intent intent = new Intent(JobDetailsActivity.this, ApplyJobActivity.class);
-                intent.putExtra("job_id", currentJob.getId());
-                startActivity(intent);
-            }
+            Intent intent = new Intent(JobDetailsActivity.this, ApplyJobActivity.class);
+            intent.putExtra("job_id", currentJob.getId());
+            startActivity(intent);
         });
     }
 }
