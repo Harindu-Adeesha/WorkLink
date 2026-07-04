@@ -14,9 +14,9 @@ import java.util.List;
 
 public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapter.ViewHolder> {
 
-    private List<DataManager.Job> jobsList;
+    private List<Job> jobsList;
 
-    public RecruiterJobAdapter(List<DataManager.Job> jobsList) {
+    public RecruiterJobAdapter(List<Job> jobsList) {
         this.jobsList = jobsList;
     }
 
@@ -29,7 +29,7 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        DataManager.Job job = jobsList.get(position);
+        Job job = jobsList.get(position);
         holder.tvTitle.setText(job.getTitle());
         holder.tvCompany.setText(job.getCompany());
 

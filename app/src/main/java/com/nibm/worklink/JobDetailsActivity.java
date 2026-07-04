@@ -13,7 +13,7 @@ import androidx.appcompat.widget.Toolbar;
 public class JobDetailsActivity extends AppCompatActivity {
 
     private String jobId;
-    private DataManager.Job currentJob;
+    private Job currentJob;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

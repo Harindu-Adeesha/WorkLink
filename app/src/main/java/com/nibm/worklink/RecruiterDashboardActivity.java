@@ -117,7 +117,7 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     }
 
     private void loadJobs() {
-        List<DataManager.Job> jobs = DataManager.getJobs();
+        List<Job> jobs = DataManager.getJobs();
         RecyclerView recyclerJobs = findViewById(R.id.recycler_recruiter_jobs);
         jobAdapter = new RecruiterJobAdapter(new ArrayList<>(jobs));
         recyclerJobs.setAdapter(jobAdapter);
@@ -137,7 +137,7 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     }
 
     private void loadReviews() {
-        List<DataManager.Review> reviews = DataManager.getReviews();
+        List<Review> reviews = DataManager.getReviews();
         RecyclerView recyclerReviews = findViewById(R.id.recycler_recruiter_reviews);
         recyclerReviews.setLayoutManager(new LinearLayoutManager(this));
         RecruiterReviewAdapter reviewAdapter = new RecruiterReviewAdapter(new ArrayList<>(reviews));

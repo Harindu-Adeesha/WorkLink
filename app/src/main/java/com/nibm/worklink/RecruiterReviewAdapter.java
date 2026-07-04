@@ -16,9 +16,9 @@ import java.util.List;
 
 public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReviewAdapter.ViewHolder> {
 
-    private List<DataManager.Review> reviewList;
+    private List<Review> reviewList;
 
-    public RecruiterReviewAdapter(List<DataManager.Review> reviewList) {
+    public RecruiterReviewAdapter(List<Review> reviewList) {
         this.reviewList = reviewList;
     }
 
@@ -31,10 +31,10 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        DataManager.Review review = reviewList.get(position);
+        Review review = reviewList.get(position);
 
         // Resolve job title and company from the job ID
-        DataManager.Job job = DataManager.getJobById(review.getJobId());
+        Job job = DataManager.getJobById(review.getJobId());
         if (job != null) {
             holder.tvJobTitle.setText(job.getTitle());
             holder.tvJobCompany.setText(job.getCompany());

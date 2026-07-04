@@ -177,9 +177,9 @@ public class EmployerDashboardActivity extends AppCompatActivity {
     // Load Jobs Posted by This Employer
     private void loadEmployerJobs() {
         String email = getEmployerEmail();
-        List<DataManager.Job> allJobs = DataManager.getJobs();
-        List<DataManager.Job> myJobs = new ArrayList<>();
-        for (DataManager.Job job : allJobs) {
+        List<Job> allJobs = DataManager.getJobs();
+        List<Job> myJobs = new ArrayList<>();
+        for (Job job : allJobs) {
             if (job.getEmployerContact().equalsIgnoreCase(email)) {
                 myJobs.add(job);
             }
@@ -198,9 +198,9 @@ public class EmployerDashboardActivity extends AppCompatActivity {
     // Load Applications Submitted to This Employer's Jobs
     private void loadEmployerApplications() {
         String email = getEmployerEmail();
-        List<DataManager.Application> allApps = DataManager.getApplications();
-        List<DataManager.Application> myApps = new ArrayList<>();
-        for (DataManager.Application app : allApps) {
+        List<Application> allApps = DataManager.getApplications();
+        List<Application> myApps = new ArrayList<>();
+        for (Application app : allApps) {
             if (app.getJob().getEmployerContact().equalsIgnoreCase(email)) {
                 myApps.add(app);
             }
@@ -345,7 +345,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
     }
 
     // Post / Update Job Dialog
-    private void showPostJobDialog(DataManager.Job existingJob) {
+    private void showPostJobDialog(Job existingJob) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View dialogView = LayoutInflater.from(this).inflate(R.layout.dialog_post_job, null);
         builder.setView(dialogView);
@@ -403,14 +403,14 @@ public class EmployerDashboardActivity extends AppCompatActivity {
                 float compRating = 5.0f;
 
                 if (isEdit) {
-                    DataManager.Job updated = new DataManager.Job(
+                    Job updated = new Job(
                             existingJob.getId(), title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
                     DataManager.updateJob(updated);
                     Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
                 } else {
                     String newId = String.valueOf(DataManager.getJobs().size() + 1);
-                    DataManager.Job newJob = new DataManager.Job(
+                    Job newJob = new Job(
                             newId, title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
                     DataManager.addJob(newJob);
@@ -462,7 +462,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
     }
 
     // Job Status Dialog
-    private void showStatusDialog(DataManager.Application app) {
+    private void showStatusDialog(Application app) {
         String[] statuses = {"Pending", "Under Review", "Shortlisted", "Accepted", "Rejected"};
         new AlertDialog.Builder(this)
                 .setTitle("Give Status for Job Application")
@@ -477,13 +477,13 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
     // JOB ADAPTER FOR EMPLOYER
     private class EmployerJobAdapter extends RecyclerView.Adapter<EmployerJobAdapter.ViewHolder> {
-        private List<DataManager.Job> jobsList;
+        private List<Job> jobsList;
 
-        public EmployerJobAdapter(List<DataManager.Job> jobsList) {
+        public EmployerJobAdapter(List<Job> jobsList) {
             this.jobsList = jobsList;
         }
 
-        public void updateJobs(List<DataManager.Job> newList) {
+        public void updateJobs(List<Job> newList) {
             this.jobsList = newList;
             notifyDataSetChanged();
         }
@@ -497,7 +497,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            DataManager.Job job = jobsList.get(position);
+            Job job = jobsList.get(position);
             holder.tvTitle.setText(job.getTitle());
             holder.tvCompany.setText(job.getCompany());
             holder.tvCategory.setText(job.getCategory());
@@ -546,13 +546,13 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
     // APPLICATION ADAPTER FOR EMPLOYER
     private class EmployerApplicationAdapter extends RecyclerView.Adapter<EmployerApplicationAdapter.ViewHolder> {
-        private List<DataManager.Application> appsList;
+        private List<Application> appsList;
 
-        public EmployerApplicationAdapter(List<DataManager.Application> appsList) {
+        public EmployerApplicationAdapter(List<Application> appsList) {
             this.appsList = appsList;
         }
 
-        public void updateApplications(List<DataManager.Application> newList) {
+        public void updateApplications(List<Application> newList) {
             this.appsList = newList;
             notifyDataSetChanged();
         }
@@ -566,14 +566,14 @@ public class EmployerDashboardActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            DataManager.Application app = appsList.get(position);
+            Application app = appsList.get(position);
             holder.tvTitle.setText(app.getJob().getTitle());
             holder.tvResume.setText("Resume: " + app.getResumeFileName());
             holder.tvCover.setText(app.getCoverLetter());
             holder.tvStatus.setText(app.getStatus());
 
             // Set dynamic applicant info
-            DataManager.Profile fp = DataManager.getProfile();
+            Profile fp = DataManager.getProfile();
             if (fp != null) {
                 holder.tvApplicant.setText("Applicant: " + fp.getName() + " (" + fp.getEmail() + ")");
             } else {

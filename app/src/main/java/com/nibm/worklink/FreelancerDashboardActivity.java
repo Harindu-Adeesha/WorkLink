@@ -182,13 +182,13 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
     // Job Feed Functions
     private void loadJobs(String category) {
-        List<DataManager.Job> jobsList = DataManager.getJobsByCategory(category);
+        List<Job> jobsList = DataManager.getJobsByCategory(category);
         jobAdapter.updateJobs(jobsList);
     }
 
     // Applications Functions
     private void loadApplications() {
-        List<DataManager.Application> appsList = DataManager.getApplications();
+        List<Application> appsList = DataManager.getApplications();
         if (appsList.isEmpty()) {
             tvEmptyApplications.setVisibility(View.VISIBLE);
             recyclerApplications.setVisibility(View.GONE);
@@ -344,7 +344,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
                 return;
             }
 
-            DataManager.Review newReview = new DataManager.Review(
+            Review newReview = new Review(
                     String.valueOf(DataManager.getReviews().size() + 1),
                     jobId,
                     rating,
@@ -360,13 +360,13 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
     // JOB ADAPTER CLASS
     private class JobAdapter extends RecyclerView.Adapter<JobAdapter.ViewHolder> {
-        private List<DataManager.Job> jobsList;
+        private List<Job> jobsList;
 
-        public JobAdapter(List<DataManager.Job> jobsList) {
+        public JobAdapter(List<Job> jobsList) {
             this.jobsList = jobsList;
         }
 
-        public void updateJobs(List<DataManager.Job> newList) {
+        public void updateJobs(List<Job> newList) {
             this.jobsList = newList;
             notifyDataSetChanged();
         }
@@ -380,7 +380,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            DataManager.Job job = jobsList.get(position);
+            Job job = jobsList.get(position);
             holder.tvTitle.setText(job.getTitle());
             holder.tvCompany.setText(job.getCompany());
             holder.tvCategory.setText(job.getCategory());
@@ -415,13 +415,13 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
     // APPLICATION ADAPTER CLASS
     private class ApplicationAdapter extends RecyclerView.Adapter<ApplicationAdapter.ViewHolder> {
-        private List<DataManager.Application> appsList;
+        private List<Application> appsList;
 
-        public ApplicationAdapter(List<DataManager.Application> appsList) {
+        public ApplicationAdapter(List<Application> appsList) {
             this.appsList = appsList;
         }
 
-        public void updateApplications(List<DataManager.Application> newList) {
+        public void updateApplications(List<Application> newList) {
             this.appsList = newList;
             notifyDataSetChanged();
         }
@@ -435,7 +435,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            DataManager.Application app = appsList.get(position);
+            Application app = appsList.get(position);
             holder.tvTitle.setText(app.getJob().getTitle());
             holder.tvCompany.setText(app.getJob().getCompany());
             holder.tvResume.setText("Resume: " + app.getResumeFileName());

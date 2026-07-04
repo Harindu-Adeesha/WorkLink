@@ -17,7 +17,7 @@ public class ApplyJobActivity extends AppCompatActivity {
     private static final int PICK_FILE_REQUEST = 101;
 
     private String jobId;
-    private DataManager.Job currentJob;
+    private Job currentJob;
 
     private TextView tvUploadedFile;
     private EditText etCoverLetter;
@@ -76,7 +76,7 @@ public class ApplyJobActivity extends AppCompatActivity {
 
             // Create application object
             String appId = String.valueOf(DataManager.getApplications().size() + 1);
-            DataManager.Application app = new DataManager.Application(
+            Application app = new Application(
                     appId,
                     currentJob,
                     coverLetter,
