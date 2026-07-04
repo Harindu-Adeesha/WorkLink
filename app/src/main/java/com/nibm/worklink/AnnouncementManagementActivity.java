@@ -24,7 +24,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class AnnouncementManagementActivity extends AppCompatActivity {
+public class AnnouncementManagementActivity extends AppCompatActivity
+        implements AnnouncementAdapter.OnAnnouncementActionListener {
 
     private RecyclerView recyclerView;
     private AnnouncementAdapter adapter;
@@ -42,7 +43,7 @@ public class AnnouncementManagementActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recycler_announcements);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new AnnouncementAdapter(announcementList);
+        adapter = new AnnouncementAdapter(announcementList, this);
         recyclerView.setAdapter(adapter);
 
         FloatingActionButton fab = findViewById(R.id.fab_add_announcement);
@@ -117,70 +118,19 @@ public class AnnouncementManagementActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private class AnnouncementAdapter extends RecyclerView.Adapter<AnnouncementAdapter.ViewHolder> {
 
-        private List<String> announcements;
+    // --- AnnouncementAdapter.OnAnnouncementActionListener callbacks ---
 
-        public AnnouncementAdapter(List<String> announcements) {
-            this.announcements = announcements;
-        }
+    @Override
+    public void onEditAnnouncement(String name, int position) {
+        showAnnouncementDialog(name, position);
+    }
 
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            String ann = announcements.get(position);
-            holder.tvName.setText(ann);
-            holder.ivIcon.setImageResource(android.R.drawable.ic_menu_agenda);
-            
-            holder.btnEdit.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    showAnnouncementDialog(announcements.get(currentPos), currentPos);
-                }
-            });
-            
-            holder.btnDelete.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    new AlertDialog.Builder(AnnouncementManagementActivity.this)
-                            .setTitle("Delete Announcement")
-                            .setMessage("Are you sure you want to delete '" + announcements.get(currentPos) + "'?")
-                            .setPositiveButton("Delete", (d, w) -> {
-                                announcements.remove(currentPos);
-                                notifyItemRemoved(currentPos);
-                                notifyItemRangeChanged(currentPos, announcements.size());
-                                Toast.makeText(AnnouncementManagementActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
-                            })
-                            .setNegativeButton("Cancel", null)
-                            .show();
-                }
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return announcements.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName;
-            ImageView ivIcon;
-            ImageButton btnEdit;
-            ImageButton btnDelete;
-
-            ViewHolder(View itemView) {
-                super(itemView);
-                tvName = itemView.findViewById(R.id.tv_category_name);
-                ivIcon = itemView.findViewById(R.id.iv_category_icon);
-                btnEdit = itemView.findViewById(R.id.btn_edit);
-                btnDelete = itemView.findViewById(R.id.btn_delete);
-            }
-        }
+    @Override
+    public void onDeleteAnnouncement(int position) {
+        announcementList.remove(position);
+        adapter.notifyItemRemoved(position);
+        adapter.notifyItemRangeChanged(position, announcementList.size());
     }
 }
+

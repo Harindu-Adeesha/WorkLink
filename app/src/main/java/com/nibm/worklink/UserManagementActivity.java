@@ -24,7 +24,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class UserManagementActivity extends AppCompatActivity {
+public class UserManagementActivity extends AppCompatActivity
+        implements UserAdapter.OnUserActionListener {
 
     private RecyclerView recyclerView;
     private UserAdapter adapter;
@@ -43,7 +44,7 @@ public class UserManagementActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recycler_users);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new UserAdapter(userList);
+        adapter = new UserAdapter(userList, this);
         recyclerView.setAdapter(adapter);
 
         FloatingActionButton fab = findViewById(R.id.fab_add_user);
@@ -118,70 +119,19 @@ public class UserManagementActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private class UserAdapter extends RecyclerView.Adapter<UserAdapter.ViewHolder> {
 
-        private List<String> users;
+    // --- UserAdapter.OnUserActionListener callbacks ---
 
-        public UserAdapter(List<String> users) {
-            this.users = users;
-        }
+    @Override
+    public void onEditUser(String name, int position) {
+        showUserDialog(name, position);
+    }
 
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            String user = users.get(position);
-            holder.tvName.setText(user);
-            holder.ivIcon.setImageResource(android.R.drawable.ic_menu_myplaces);
-            
-            holder.btnEdit.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    showUserDialog(users.get(currentPos), currentPos);
-                }
-            });
-            
-            holder.btnDelete.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    new AlertDialog.Builder(UserManagementActivity.this)
-                            .setTitle("Delete User")
-                            .setMessage("Are you sure you want to delete '" + users.get(currentPos) + "'?")
-                            .setPositiveButton("Delete", (d, w) -> {
-                                users.remove(currentPos);
-                                notifyItemRemoved(currentPos);
-                                notifyItemRangeChanged(currentPos, users.size());
-                                Toast.makeText(UserManagementActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
-                            })
-                            .setNegativeButton("Cancel", null)
-                            .show();
-                }
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return users.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName;
-            ImageView ivIcon;
-            ImageButton btnEdit;
-            ImageButton btnDelete;
-
-            ViewHolder(View itemView) {
-                super(itemView);
-                tvName = itemView.findViewById(R.id.tv_category_name);
-                ivIcon = itemView.findViewById(R.id.iv_category_icon);
-                btnEdit = itemView.findViewById(R.id.btn_edit);
-                btnDelete = itemView.findViewById(R.id.btn_delete);
-            }
-        }
+    @Override
+    public void onDeleteUser(int position) {
+        userList.remove(position);
+        adapter.notifyItemRemoved(position);
+        adapter.notifyItemRangeChanged(position, userList.size());
     }
 }
+

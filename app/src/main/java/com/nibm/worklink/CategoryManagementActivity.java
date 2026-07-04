@@ -23,7 +23,8 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CategoryManagementActivity extends AppCompatActivity {
+public class CategoryManagementActivity extends AppCompatActivity
+        implements CategoryAdapter.OnCategoryActionListener {
 
     private RecyclerView recyclerView;
     private CategoryAdapter adapter;
@@ -44,7 +45,7 @@ public class CategoryManagementActivity extends AppCompatActivity {
 
         recyclerView = findViewById(R.id.recycler_categories);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new CategoryAdapter(categoryList);
+        adapter = new CategoryAdapter(categoryList, this);
         recyclerView.setAdapter(adapter);
 
         FloatingActionButton fab = findViewById(R.id.fab_add_category);
@@ -118,67 +119,19 @@ public class CategoryManagementActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    private class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
 
-        private List<String> categories;
+    // --- CategoryAdapter.OnCategoryActionListener callbacks ---
 
-        public CategoryAdapter(List<String> categories) {
-            this.categories = categories;
-        }
+    @Override
+    public void onEditCategory(String name, int position) {
+        showCategoryDialog(name, position);
+    }
 
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_category, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            String category = categories.get(position);
-            holder.tvName.setText(category);
-            
-            holder.btnEdit.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    showCategoryDialog(categories.get(currentPos), currentPos);
-                }
-            });
-            
-            holder.btnDelete.setOnClickListener(v -> {
-                int currentPos = holder.getAdapterPosition();
-                if (currentPos != RecyclerView.NO_POSITION) {
-                    new AlertDialog.Builder(CategoryManagementActivity.this)
-                            .setTitle("Delete Category")
-                            .setMessage("Are you sure you want to delete '" + categories.get(currentPos) + "'?")
-                            .setPositiveButton("Delete", (d, w) -> {
-                                categories.remove(currentPos);
-                                notifyItemRemoved(currentPos);
-                                notifyItemRangeChanged(currentPos, categories.size());
-                                Toast.makeText(CategoryManagementActivity.this, "Deleted", Toast.LENGTH_SHORT).show();
-                            })
-                            .setNegativeButton("Cancel", null)
-                            .show();
-                }
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return categories.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvName;
-            ImageButton btnEdit;
-            ImageButton btnDelete;
-
-            ViewHolder(View itemView) {
-                super(itemView);
-                tvName = itemView.findViewById(R.id.tv_category_name);
-                btnEdit = itemView.findViewById(R.id.btn_edit);
-                btnDelete = itemView.findViewById(R.id.btn_delete);
-            }
-        }
+    @Override
+    public void onDeleteCategory(int position) {
+        categoryList.remove(position);
+        adapter.notifyItemRemoved(position);
+        adapter.notifyItemRangeChanged(position, categoryList.size());
     }
 }
+

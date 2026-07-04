@@ -26,7 +26,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class EmployerDashboardActivity extends AppCompatActivity {
+public class EmployerDashboardActivity extends AppCompatActivity
+        implements EmployerJobAdapter.OnJobActionListener,
+                   EmployerApplicationAdapter.OnApplicationStatusListener {
 
     private View layoutJobsTab;
     private View layoutApplicationsTab;
@@ -95,7 +97,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
         recyclerJobs = findViewById(R.id.recycler_employer_jobs);
         recyclerJobs.setLayoutManager(new LinearLayoutManager(this));
         tvEmptyJobs = findViewById(R.id.tv_empty_employer_jobs);
-        jobAdapter = new EmployerJobAdapter(new ArrayList<>());
+        jobAdapter = new EmployerJobAdapter(new ArrayList<>(), this);
         recyclerJobs.setAdapter(jobAdapter);
 
         Button btnPostNewJob = findViewById(R.id.btn_post_new_job);
@@ -107,7 +109,7 @@ public class EmployerDashboardActivity extends AppCompatActivity {
         recyclerApplications = findViewById(R.id.recycler_employer_applications);
         recyclerApplications.setLayoutManager(new LinearLayoutManager(this));
         tvEmptyApplications = findViewById(R.id.tv_empty_employer_applications);
-        appAdapter = new EmployerApplicationAdapter(new ArrayList<>());
+        appAdapter = new EmployerApplicationAdapter(new ArrayList<>(), this);
         recyclerApplications.setAdapter(appAdapter);
 
         // Initialize Profile Tab Views
@@ -475,157 +477,31 @@ public class EmployerDashboardActivity extends AppCompatActivity {
                 .show();
     }
 
-    // JOB ADAPTER FOR EMPLOYER
-    private class EmployerJobAdapter extends RecyclerView.Adapter<EmployerJobAdapter.ViewHolder> {
-        private List<Job> jobsList;
+    // --- EmployerJobAdapter.OnJobActionListener callbacks ---
 
-        public EmployerJobAdapter(List<Job> jobsList) {
-            this.jobsList = jobsList;
-        }
-
-        public void updateJobs(List<Job> newList) {
-            this.jobsList = newList;
-            notifyDataSetChanged();
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_employer_job, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Job job = jobsList.get(position);
-            holder.tvTitle.setText(job.getTitle());
-            holder.tvCompany.setText(job.getCompany());
-            holder.tvCategory.setText(job.getCategory());
-            holder.tvSalary.setText(job.getSalary());
-            holder.tvDeadline.setText("Deadline: " + job.getDeadline());
-            holder.tvRating.setText("★ " + job.getEmployerRating());
-
-            holder.btnEdit.setOnClickListener(v -> showPostJobDialog(job));
-            holder.btnDelete.setOnClickListener(v -> {
-                new AlertDialog.Builder(EmployerDashboardActivity.this)
-                        .setTitle("Delete Job Listing")
-                        .setMessage("Are you sure you want to delete the job post for \"" + job.getTitle() + "\"? All related applications will be deleted too.")
-                        .setPositiveButton("Delete", (dialog, which) -> {
-                            DataManager.deleteJob(job.getId());
-                            Toast.makeText(EmployerDashboardActivity.this, "Job listing deleted", Toast.LENGTH_SHORT).show();
-                            loadEmployerJobs();
-                            loadEmployerApplications(); // also updates application list
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return jobsList.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvCompany, tvCategory, tvSalary, tvDeadline, tvRating;
-            Button btnEdit, btnDelete;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvTitle = itemView.findViewById(R.id.tv_employer_job_title);
-                tvCompany = itemView.findViewById(R.id.tv_employer_job_company);
-                tvCategory = itemView.findViewById(R.id.tv_employer_job_category);
-                tvSalary = itemView.findViewById(R.id.tv_employer_job_salary);
-                tvDeadline = itemView.findViewById(R.id.tv_employer_job_deadline);
-                tvRating = itemView.findViewById(R.id.tv_employer_job_rating);
-                btnEdit = itemView.findViewById(R.id.btn_employer_job_edit);
-                btnDelete = itemView.findViewById(R.id.btn_employer_job_delete);
-            }
-        }
+    @Override
+    public void onEditJob(Job job) {
+        showPostJobDialog(job);
     }
 
-    // APPLICATION ADAPTER FOR EMPLOYER
-    private class EmployerApplicationAdapter extends RecyclerView.Adapter<EmployerApplicationAdapter.ViewHolder> {
-        private List<Application> appsList;
+    @Override
+    public void onDeleteJob(String jobId) {
+        DataManager.deleteJob(jobId);
+        loadEmployerJobs();
+        loadEmployerApplications();
+    }
 
-        public EmployerApplicationAdapter(List<Application> appsList) {
-            this.appsList = appsList;
-        }
+    // --- EmployerApplicationAdapter.OnApplicationStatusListener callbacks ---
 
-        public void updateApplications(List<Application> newList) {
-            this.appsList = newList;
-            notifyDataSetChanged();
-        }
+    @Override
+    public void onGiveStatus(Application app) {
+        showStatusDialog(app);
+    }
 
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_employer_application, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Application app = appsList.get(position);
-            holder.tvTitle.setText(app.getJob().getTitle());
-            holder.tvResume.setText("Resume: " + app.getResumeFileName());
-            holder.tvCover.setText(app.getCoverLetter());
-            holder.tvStatus.setText(app.getStatus());
-
-            // Set dynamic applicant info
-            Profile fp = DataManager.getProfile();
-            if (fp != null) {
-                holder.tvApplicant.setText("Applicant: " + fp.getName() + " (" + fp.getEmail() + ")");
-            } else {
-                holder.tvApplicant.setText("Applicant: Mock Freelancer (freelancer@worklink.com)");
-            }
-
-            // Set status tag styling
-            if ("Accepted".equalsIgnoreCase(app.getStatus())) {
-                holder.tvStatus.setTextColor(0xFF198754);
-                holder.tvStatus.setBackgroundColor(0xFFD1E7DD);
-            } else if ("Rejected".equalsIgnoreCase(app.getStatus())) {
-                holder.tvStatus.setTextColor(0xFFDC3545);
-                holder.tvStatus.setBackgroundColor(0xFFF8D7DA);
-            } else {
-                holder.tvStatus.setTextColor(0xFF856404);
-                holder.tvStatus.setBackgroundColor(0xFFFFF3CD);
-            }
-
-            holder.btnGiveStatus.setOnClickListener(v -> showStatusDialog(app));
-            holder.btnDelete.setOnClickListener(v -> {
-                new AlertDialog.Builder(EmployerDashboardActivity.this)
-                        .setTitle("Dismiss Application")
-                        .setMessage("Are you sure you want to dismiss this application from the feed?")
-                        .setPositiveButton("Dismiss", (dialog, which) -> {
-                            DataManager.deleteApplication(app.getId());
-                            Toast.makeText(EmployerDashboardActivity.this, "Application dismissed", Toast.LENGTH_SHORT).show();
-                            loadEmployerApplications();
-                        })
-                        .setNegativeButton("Cancel", null)
-                        .show();
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return appsList.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvApplicant, tvResume, tvCover, tvStatus;
-            Button btnGiveStatus, btnDelete;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvTitle = itemView.findViewById(R.id.tv_employer_app_title);
-                tvApplicant = itemView.findViewById(R.id.tv_employer_app_applicant);
-                tvResume = itemView.findViewById(R.id.tv_employer_app_resume);
-                tvCover = itemView.findViewById(R.id.tv_employer_app_cover);
-                tvStatus = itemView.findViewById(R.id.tv_employer_app_status);
-                btnGiveStatus = itemView.findViewById(R.id.btn_employer_app_give_status);
-                btnDelete = itemView.findViewById(R.id.btn_employer_app_delete);
-            }
-        }
+    @Override
+    public void onDismissApplication(String appId) {
+        DataManager.deleteApplication(appId);
+        loadEmployerApplications();
     }
 }
+

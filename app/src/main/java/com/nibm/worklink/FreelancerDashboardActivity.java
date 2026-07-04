@@ -26,7 +26,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FreelancerDashboardActivity extends AppCompatActivity {
+public class FreelancerDashboardActivity extends AppCompatActivity
+        implements ApplicationAdapter.OnApplicationActionListener {
 
     private View layoutJobsTab;
     private View layoutApplicationsTab;
@@ -196,7 +197,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
             tvEmptyApplications.setVisibility(View.GONE);
             recyclerApplications.setVisibility(View.VISIBLE);
             if (appAdapter == null) {
-                appAdapter = new ApplicationAdapter(appsList);
+                appAdapter = new ApplicationAdapter(appsList, this);
                 recyclerApplications.setAdapter(appAdapter);
             } else {
                 appAdapter.updateApplications(appsList);
@@ -358,137 +359,17 @@ public class FreelancerDashboardActivity extends AppCompatActivity {
         dialog.show();
     }
 
-    // JOB ADAPTER CLASS
-    private class JobAdapter extends RecyclerView.Adapter<JobAdapter.ViewHolder> {
-        private List<Job> jobsList;
+    // --- ApplicationAdapter.OnApplicationActionListener callbacks ---
 
-        public JobAdapter(List<Job> jobsList) {
-            this.jobsList = jobsList;
-        }
-
-        public void updateJobs(List<Job> newList) {
-            this.jobsList = newList;
-            notifyDataSetChanged();
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_job, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Job job = jobsList.get(position);
-            holder.tvTitle.setText(job.getTitle());
-            holder.tvCompany.setText(job.getCompany());
-            holder.tvCategory.setText(job.getCategory());
-            holder.tvSalary.setText(job.getSalary());
-            holder.tvRating.setText("★ " + job.getEmployerRating());
-
-            holder.itemView.setOnClickListener(v -> {
-                Intent intent = new Intent(FreelancerDashboardActivity.this, JobDetailsActivity.class);
-                intent.putExtra("job_id", job.getId());
-                startActivity(intent);
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return jobsList.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvCompany, tvCategory, tvSalary, tvRating;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvTitle = itemView.findViewById(R.id.tv_job_title);
-                tvCompany = itemView.findViewById(R.id.tv_job_company);
-                tvCategory = itemView.findViewById(R.id.tv_job_category);
-                tvSalary = itemView.findViewById(R.id.tv_job_salary);
-                tvRating = itemView.findViewById(R.id.tv_job_rating);
-            }
-        }
+    @Override
+    public void onDeleteApplication(String appId) {
+        DataManager.deleteApplication(appId);
+        loadApplications();
     }
 
-    // APPLICATION ADAPTER CLASS
-    private class ApplicationAdapter extends RecyclerView.Adapter<ApplicationAdapter.ViewHolder> {
-        private List<Application> appsList;
-
-        public ApplicationAdapter(List<Application> appsList) {
-            this.appsList = appsList;
-        }
-
-        public void updateApplications(List<Application> newList) {
-            this.appsList = newList;
-            notifyDataSetChanged();
-        }
-
-        @NonNull
-        @Override
-        public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-            View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.item_application, parent, false);
-            return new ViewHolder(view);
-        }
-
-        @Override
-        public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-            Application app = appsList.get(position);
-            holder.tvTitle.setText(app.getJob().getTitle());
-            holder.tvCompany.setText(app.getJob().getCompany());
-            holder.tvResume.setText("Resume: " + app.getResumeFileName());
-            holder.tvStatus.setText(app.getStatus());
-
-            // Set color based on status
-            if ("Accepted".equalsIgnoreCase(app.getStatus())) {
-                holder.tvStatus.setTextColor(0xFF198754); // green
-                holder.tvStatus.setBackgroundColor(0xFFD1E7DD);
-            } else if ("Rejected".equalsIgnoreCase(app.getStatus())) {
-                holder.tvStatus.setTextColor(0xFFDC3545); // red
-                holder.tvStatus.setBackgroundColor(0xFFF8D7DA);
-            } else {
-                holder.tvStatus.setTextColor(0xFF856404); // yellow/orange
-                holder.tvStatus.setBackgroundColor(0xFFFFF3CD);
-            }
-
-            holder.btnDelete.setOnClickListener(v -> {
-                new AlertDialog.Builder(FreelancerDashboardActivity.this)
-                        .setTitle("Cancel Application")
-                        .setMessage("Are you sure you want to cancel your application for " + app.getJob().getTitle() + "?")
-                        .setPositiveButton("Cancel Application", (dialog, which) -> {
-                            DataManager.deleteApplication(app.getId());
-                            Toast.makeText(FreelancerDashboardActivity.this, "Application cancelled", Toast.LENGTH_SHORT).show();
-                            loadApplications();
-                        })
-                        .setNegativeButton("Keep Application", null)
-                        .show();
-            });
-
-            holder.btnReview.setOnClickListener(v -> {
-                showReviewDialog(app.getJob().getId(), app.getJob().getTitle());
-            });
-        }
-
-        @Override
-        public int getItemCount() {
-            return appsList.size();
-        }
-
-        class ViewHolder extends RecyclerView.ViewHolder {
-            TextView tvTitle, tvCompany, tvResume, tvStatus;
-            Button btnReview, btnDelete;
-
-            public ViewHolder(@NonNull View itemView) {
-                super(itemView);
-                tvTitle = itemView.findViewById(R.id.tv_app_title);
-                tvCompany = itemView.findViewById(R.id.tv_app_company);
-                tvResume = itemView.findViewById(R.id.tv_app_resume);
-                tvStatus = itemView.findViewById(R.id.tv_app_status);
-                btnReview = itemView.findViewById(R.id.btn_app_review);
-                btnDelete = itemView.findViewById(R.id.btn_app_delete);
-            }
-        }
+    @Override
+    public void onReviewApplication(String jobId, String jobTitle) {
+        showReviewDialog(jobId, jobTitle);
     }
 }
+
