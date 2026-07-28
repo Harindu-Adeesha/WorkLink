@@ -10,14 +10,27 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
 import java.util.List;
 
 public class RecruiterUserAdapter extends RecyclerView.Adapter<RecruiterUserAdapter.ViewHolder> {
 
     public static class UserModel {
+        String uid;
         String name;
+        String email;
         String role;
         boolean isVerified = false;
+
+        public UserModel(String uid, String name, String email, String role, boolean isVerified) {
+            this.uid = uid;
+            this.name = name;
+            this.email = email;
+            this.role = role;
+            this.isVerified = isVerified;
+        }
+
         public UserModel(String name, String role) {
             this.name = name;
             this.role = role;
@@ -53,8 +66,41 @@ public class RecruiterUserAdapter extends RecyclerView.Adapter<RecruiterUserAdap
 
         holder.btnVerify.setOnClickListener(v -> {
             user.isVerified = true;
-            notifyItemChanged(position);
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+            // 1. Update DB / Firestore Users collection
+            if (user.uid != null && !user.uid.isEmpty()) {
+                db.collection("Users").document(user.uid).update("isVerified", true);
+            }
+
+            // 2. Create Notification in new Firestore collection "Notifications"
+            String recipientId = (user.email != null && !user.email.isEmpty()) ? user.email : (user.uid != null ? user.uid : user.name);
+            String notifId = db.collection("Notifications").document().getId();
+            long timestamp = System.currentTimeMillis();
+
+            Notification notification = new Notification(
+                    notifId,
+                    recipientId,
+                    "User Account Verified",
+                    "Congratulations " + user.name + "! Your account profile has been verified by a recruiter.",
+                    "VERIFY",
+                    null,
+                    null,
+                    timestamp
+            );
+
+            db.collection("Notifications").document(notifId).set(notification);
+            DataManager.addNotification(notification);
+
             Toast.makeText(v.getContext(), "Verification Mark Granted to: " + user.name, Toast.LENGTH_SHORT).show();
+
+            // Remove from unverified users list
+            int pos = holder.getAdapterPosition();
+            if (pos != RecyclerView.NO_POSITION && pos < usersList.size()) {
+                usersList.remove(pos);
+                notifyItemRemoved(pos);
+                notifyItemRangeChanged(pos, usersList.size());
+            }
         });
     }
 

@@ -7,18 +7,24 @@ public class User {
     private String role;
     private String skills;
     private String bio;
+    private boolean isVerified = false;
 
     public User() {
         // Default constructor required for Firebase Firestore
     }
 
     public User(String uid, String name, String email, String role, String skills, String bio) {
+        this(uid, name, email, role, skills, bio, false);
+    }
+
+    public User(String uid, String name, String email, String role, String skills, String bio, boolean isVerified) {
         this.uid = uid;
         this.name = name;
         this.email = email;
         this.role = role;
         this.skills = skills;
         this.bio = bio;
+        this.isVerified = isVerified;
     }
 
     public String getUid() {
@@ -67,6 +73,14 @@ public class User {
 
     public void setBio(String bio) {
         this.bio = bio;
+    }
+
+    public boolean isVerified() {
+        return isVerified;
+    }
+
+    public void setVerified(boolean verified) {
+        isVerified = verified;
     }
 
     public String getDetails() {

@@ -327,7 +327,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Profile"
+                    android:text="Recruiter Profile"
                     android:textSize="28sp"
                     android:textStyle="bold"
                     android:textColor="#14213d"
@@ -336,13 +336,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Manage your account settings."
+                    android:text="View and edit your personal recruiter account details."
                     android:textColor="#6C757D"
                     android:textSize="14sp"
                     android:layout_marginBottom="24dp"/>
 
-                <!-- Profile Card -->
+                <!-- Profile View State Card -->
                 <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_recruiter_profile_view"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="16dp"
@@ -355,40 +356,203 @@
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:padding="20dp"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="64dp"
-                            android:layout_height="64dp"
-                            android:src="@android:drawable/ic_menu_myplaces"
-                            android:background="@drawable/avatar_bg"
-                            android:padding="12dp"/>
+                        android:orientation="vertical"
+                        android:padding="20dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical"
-                            android:layout_marginStart="16dp">
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
 
-                            <TextView
-                                android:id="@+id/tv_profile_name"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="Recruiter"
-                                android:textSize="20sp"
-                                android:textStyle="bold"
-                                android:textColor="#14213d"/>
+                            <ImageView
+                                android:layout_width="64dp"
+                                android:layout_height="64dp"
+                                android:src="@android:drawable/ic_menu_myplaces"
+                                android:background="@drawable/avatar_bg"
+                                android:padding="12dp"/>
 
-                            <TextView
-                                android:layout_width="wrap_content"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:text="Recruiter Role"
-                                android:textSize="14sp"
-                                android:textColor="#035DD6"
-                                android:layout_marginTop="4dp"/>
+                                android:layout_weight="1"
+                                android:orientation="vertical"
+                                android:layout_marginStart="16dp">
+
+                                <TextView
+                                    android:id="@+id/tv_profile_name"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Recruiter Name"
+                                    android:textSize="20sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#14213d"/>
+
+                                <TextView
+                                    android:id="@+id/tv_profile_role"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Recruiter"
+                                    android:textSize="14sp"
+                                    android:textColor="#035DD6"
+                                    android:layout_marginTop="4dp"/>
+
+                                <TextView
+                                    android:id="@+id/tv_profile_email"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="recruiter@worklink.com"
+                                    android:textSize="13sp"
+                                    android:textColor="#6C757D"
+                                    android:layout_marginTop="2dp"/>
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <View
+                            android:layout_width="match_parent"
+                            android:layout_height="1dp"
+                            android:background="#E9ECEF"
+                            android:layout_marginVertical="16dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="BIO / SPECIALIZATION"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#6C757D"/>
+
+                        <TextView
+                            android:id="@+id/tv_profile_bio"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No bio provided yet."
+                            android:textSize="14sp"
+                            android:textColor="#14213d"
+                            android:layout_marginTop="4dp"/>
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="SKILLS / EXPERTISE"
+                            android:textSize="11sp"
+                            android:textStyle="bold"
+                            android:textColor="#6C757D"
+                            android:layout_marginTop="16dp"/>
+
+                        <TextView
+                            android:id="@+id/tv_profile_skills"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="No skills listed yet."
+                            android:textSize="14sp"
+                            android:textColor="#14213d"
+                            android:layout_marginTop="4dp"/>
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btn_edit_recruiter_profile"
+                            android:layout_width="match_parent"
+                            android:layout_height="50dp"
+                            android:text="Edit Profile"
+                            android:backgroundTint="#035DD6"
+                            app:cornerRadius="6dp"
+                            android:layout_marginTop="20dp"/>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Profile Edit State Card (Initially Hidden) -->
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/card_recruiter_profile_edit"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginBottom="16dp"
+                    android:visibility="gone"
+                    app:cardBackgroundColor="@android:color/white"
+                    app:cardCornerRadius="8dp"
+                    app:cardElevation="2dp"
+                    app:strokeWidth="1dp"
+                    app:strokeColor="#E9ECEF">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:padding="20dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="Edit Profile Details"
+                            android:textSize="18sp"
+                            android:textStyle="bold"
+                            android:textColor="#14213d"
+                            android:layout_marginBottom="16dp"/>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Full Name"
+                            app:boxBackgroundMode="outline"
+                            android:layout_marginBottom="12dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_recruiter_profile_name"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textPersonName"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Bio / Specialization"
+                            app:boxBackgroundMode="outline"
+                            android:layout_marginBottom="12dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_recruiter_profile_bio"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="textMultiLine"
+                                android:minLines="2"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <com.google.android.material.textfield.TextInputLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="Skills / Expertise (comma separated)"
+                            app:boxBackgroundMode="outline"
+                            android:layout_marginBottom="16dp">
+                            <com.google.android.material.textfield.TextInputEditText
+                                android:id="@+id/et_recruiter_profile_skills"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:inputType="text"/>
+                        </com.google.android.material.textfield.TextInputLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_cancel_recruiter_profile"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"
+                                android:layout_weight="1"
+                                android:text="Cancel"
+                                android:textColor="#6C757D"
+                                style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+                                app:cornerRadius="6dp"
+                                android:layout_marginEnd="8dp"/>
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btn_save_recruiter_profile"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"
+                                android:layout_weight="1"
+                                android:text="Save Changes"
+                                android:backgroundTint="#035DD6"
+                                app:cornerRadius="6dp"
+                                android:layout_marginStart="8dp"/>
                         </LinearLayout>
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
