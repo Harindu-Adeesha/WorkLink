@@ -223,6 +223,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity
 
             List<Job> filteredJobs = new ArrayList<>();
             for (Job job : fetchedJobs) {
+                boolean isApproved = job.isVerified() || "Verified".equalsIgnoreCase(job.getStatus()) || "Approved".equalsIgnoreCase(job.getStatus());
+                if (!isApproved) {
+                    continue;
+                }
                 if (category == null || category.equalsIgnoreCase("All")) {
                     filteredJobs.add(job);
                 } else if (job.getCategory() != null && job.getCategory().equalsIgnoreCase(category.trim())) {
@@ -245,11 +249,18 @@ public class FreelancerDashboardActivity extends AppCompatActivity
             });
         }).addOnFailureListener(e -> {
             List<Job> jobsList = DataManager.getJobsByCategory(category);
+            List<Job> approvedJobsList = new ArrayList<>();
+            for (Job job : jobsList) {
+                boolean isApproved = job.isVerified() || "Verified".equalsIgnoreCase(job.getStatus()) || "Approved".equalsIgnoreCase(job.getStatus());
+                if (isApproved) {
+                    approvedJobsList.add(job);
+                }
+            }
             if (jobAdapter == null) {
-                jobAdapter = new JobAdapter(jobsList);
+                jobAdapter = new JobAdapter(approvedJobsList);
                 recyclerJobs.setAdapter(jobAdapter);
             } else {
-                jobAdapter.updateJobs(jobsList);
+                jobAdapter.updateJobs(approvedJobsList);
             }
             RatingRepository.fetchJobRatings(ratingsMap -> {
                 if (jobAdapter != null) jobAdapter.updateRatings(ratingsMap);
@@ -299,11 +310,16 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                             );
                         }
 
+                        String applicantName = doc.getString("applicantName");
+                        String applicantEmail = doc.getString("applicantEmail");
+                        
                         Application app = new Application(
                             id != null ? id : doc.getId(),
                             job, coverLetter != null ? coverLetter : "",
                             resumeUrl != null ? resumeUrl : "",
-                            status
+                            status,
+                            applicantName,
+                            applicantEmail
                         );
                         appsList.add(app);
                     }

@@ -1,0 +1,139 @@
+package com.nibm.worklink;
+
+import android.os.Bundle;
+import android.view.View;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+public class NotificationsActivity extends AppCompatActivity {
+
+    private RecyclerView recyclerView;
+    private TextView tvEmpty;
+    private FirebaseFirestore db;
+    private String currentUid;
+    private String userRole; // "Employer" or "Freelancer"
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_notifications);
+
+        db = FirebaseFirestore.getInstance();
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        currentUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
+        userRole = getIntent().getStringExtra("userRole");
+
+        // Setup Toolbar
+        Toolbar toolbar = findViewById(R.id.toolbar_notifications);
+        setSupportActionBar(toolbar);
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().setDisplayShowTitleEnabled(false);
+        }
+
+        // Setup Bottom Navigation
+        BottomNavigationView bottomNav = findViewById(R.id.notifications_bottom_navigation);
+        // Highlight "Alerts" while we're in this screen
+        bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_employer_notifications) {
+                return true; // already here
+            }
+            // For any other tab, just go back — the dashboard will handle it
+            finish();
+            return true;
+        });
+
+        recyclerView = findViewById(R.id.recycler_notifications_page);
+        tvEmpty      = findViewById(R.id.tv_empty_notifications_page);
+        recyclerView.setLayoutManager(new LinearLayoutManager(this));
+
+        loadAll();
+    }
+
+    private void loadAll() {
+        if (currentUid == null) return;
+
+        List<EmployerNotificationAdapter.NotificationItem> items = new ArrayList<>();
+
+        // 1. Fetch personal Notifications
+        db.collection("Notifications")
+            .whereEqualTo("recipientId", currentUid)
+            .get()
+            .addOnSuccessListener(notifSnap -> {
+                for (DocumentSnapshot doc : notifSnap) {
+                    Notification notif = doc.toObject(Notification.class);
+                    if (notif != null) {
+                        notif.setId(doc.getId());
+                        items.add(new EmployerNotificationAdapter.NotificationItem(notif));
+                        db.collection("Notifications").document(doc.getId()).update("read", true);
+                    }
+                }
+
+                // 2. Fetch Announcements relevant to this user's role
+                db.collection("Announcements")
+                    .get()
+                    .addOnSuccessListener(annSnap -> {
+                        for (DocumentSnapshot doc : annSnap) {
+                            String audience = doc.getString("targetAudience");
+                            if (isAudienceRelevant(audience)) {
+                                // Read the Firestore Timestamp for ordering
+                                long createdAtMs = 0;
+                                com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                                if (ts != null) createdAtMs = ts.toDate().getTime();
+
+                                Announcement ann = new Announcement(
+                                    doc.getId(),
+                                    doc.getString("title"),
+                                    doc.getString("message"),
+                                    audience,
+                                    doc.getString("priority"),
+                                    doc.getString("date")
+                                );
+                                items.add(new EmployerNotificationAdapter.NotificationItem(ann, createdAtMs));
+                            }
+                        }
+
+                        // Sort: newer notifications first
+                        Collections.sort(items, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+
+                        if (items.isEmpty()) {
+                            tvEmpty.setVisibility(View.VISIBLE);
+                            recyclerView.setVisibility(View.GONE);
+                        } else {
+                            tvEmpty.setVisibility(View.GONE);
+                            recyclerView.setVisibility(View.VISIBLE);
+                            recyclerView.setAdapter(new EmployerNotificationAdapter(items));
+                        }
+                    })
+                    .addOnFailureListener(e ->
+                        Toast.makeText(this, "Failed to load announcements", Toast.LENGTH_SHORT).show());
+            })
+            .addOnFailureListener(e ->
+                Toast.makeText(this, "Failed to load notifications", Toast.LENGTH_SHORT).show());
+    }
+
+    private boolean isAudienceRelevant(String audience) {
+        if (audience == null) return false;
+        String a = audience.trim().toLowerCase();
+        if (a.equals("all")) return true;
+        if (userRole != null) {
+            return a.startsWith(userRole.trim().toLowerCase());
+        }
+        return false;
+    }
+}

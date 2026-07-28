@@ -145,7 +145,35 @@
                 android:textColor="#6C757D"
                 android:textSize="14sp"
                 android:layout_marginTop="4dp"
-                android:layout_marginBottom="16dp"/>
+                android:layout_marginBottom="12dp"/>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+
+                <EditText
+                    android:id="@+id/et_search_applications"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:hint="Search applicant or job..."
+                    android:textColorHint="#6C757D"
+                    android:textColor="#14213d"
+                    android:inputType="text"
+                    android:background="@drawable/avatar_bg"
+                    android:paddingHorizontal="12dp"
+                    android:textSize="14sp"
+                    android:layout_marginEnd="8dp"/>
+
+                <Spinner
+                    android:id="@+id/spinner_sort_applications"
+                    android:layout_width="wrap_content"
+                    android:layout_height="48dp"
+                    android:backgroundTint="#035DD6"
+                    android:popupBackground="@android:color/white"/>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tv_empty_employer_applications"

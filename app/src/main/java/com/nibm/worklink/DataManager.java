@@ -21,31 +21,31 @@ public class DataManager {
                 "We are looking for a Senior Android Developer to design, build, and maintain our next-generation mobile applications.",
                 "$120k - $150k / year", "Software Development",
                 "Google LLC is a global technology leader focused on improving the ways people connect with information.",
-                4.8f, "careers@google.com", "2026-07-31"));
+                4.8f, "careers@google.com", "2026-07-31", "Verified", true));
 
         jobs.add(new Job("2", "UI/UX Designer", "Figma Inc",
                 "Join our design team to craft beautiful interfaces and optimize user journeys for millions of designers worldwide.",
                 "$90k - $110k / year", "UI/UX Design",
                 "Figma is a collaborative web application for interface design, with additional offline features enabled by desktop applications.",
-                4.7f, "design@figma.com", "2026-08-15"));
+                4.7f, "design@figma.com", "2026-08-15", "Verified", true));
 
         jobs.add(new Job("3", "Technical Content Writer", "Medium",
                 "Write clear, concise technical articles and documentation explaining complex software engineering concepts.",
                 "$45 - $60 / hour", "Content Writing",
                 "Medium is an open platform where over 100 million readers come to find insightful and dynamic thinking.",
-                4.3f, "editor@medium.com", "2026-07-20"));
+                4.3f, "editor@medium.com", "2026-07-20", "Verified", true));
 
         jobs.add(new Job("4", "Growth Marketing Manager", "Netflix",
                 "Drive subscriber acquisition and design performance marketing campaigns across channels for digital video streaming.",
                 "$100k - $130k / year", "Digital Marketing",
                 "Netflix, Inc. is an American media-services provider and production company headquartered in Los Gatos, California.",
-                4.6f, "recruiting@netflix.com", "2026-08-01"));
+                4.6f, "recruiting@netflix.com", "2026-08-01", "Verified", true));
 
         jobs.add(new Job("5", "Mobile Developer (Kotlin)", "Spotify",
                 "Develop outstanding user experiences on Spotify's Android app using modern tools, libraries, and Kotlin programming.",
                 "$110k - $135k / year", "Software Development",
                 "Spotify is a digital music, podcast, and video service that gives you access to millions of songs.",
-                4.9f, "jobs@spotify.com", "2026-07-25"));
+                4.9f, "jobs@spotify.com", "2026-07-25", "Verified", true));
 
         // Hardcoded Reviews (simulating reviews submitted by Freelancers)
         reviews.add(new Review("1", "1", 5.0f, "Google was an amazing client! Project scope was crystal clear and payments were prompt. Highly recommend."));

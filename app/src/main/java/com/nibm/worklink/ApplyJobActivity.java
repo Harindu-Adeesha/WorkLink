@@ -108,41 +108,59 @@ public class ApplyJobActivity extends AppCompatActivity {
 
     private void submitApplication(String coverLetter, String cvUrlOrName, Button btnSubmit) {
         String appId = String.valueOf(System.currentTimeMillis());
-        Application app = new Application(
-                appId,
-                currentJob,
-                coverLetter,
-                cvUrlOrName,
-                "Pending"
-        );
-
-        // Save in-memory DataManager
-        DataManager.addApplication(app);
-
-        // Save to Firestore DB collection "Applications"
         String freelancerUid = FirebaseAuth.getInstance().getCurrentUser() != null
                 ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
-        Map<String, Object> map = new HashMap<>();
-        map.put("id", appId);
-        map.put("freelancerUid", freelancerUid);
-        map.put("jobId", currentJob != null ? currentJob.getId() : "");
-        map.put("jobTitle", currentJob != null ? currentJob.getTitle() : "");
-        map.put("company", currentJob != null ? currentJob.getCompany() : "");
-        map.put("employerContact", currentJob != null ? currentJob.getEmployerContact() : "");
-        map.put("coverLetter", coverLetter);
-        map.put("resumeFileName", cvUrlOrName);
-        map.put("resumeUrl", cvUrlOrName);
-        map.put("status", "Pending");
-        map.put("createdAt", System.currentTimeMillis());
+        String applicantEmail = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getEmail() : "freelancer@worklink.com";
 
-        FirebaseFirestore.getInstance().collection("Applications").document(appId).set(map)
-            .addOnCompleteListener(task -> {
-                Toast.makeText(this, "Application Submitted to " + (currentJob != null ? currentJob.getCompany() : "Employer") + "!", Toast.LENGTH_LONG).show();
+        FirebaseFirestore.getInstance().collection("Users").document(freelancerUid).get()
+            .addOnSuccessListener(doc -> {
+                String applicantName = doc.getString("name");
+                if (applicantName == null || applicantName.isEmpty()) applicantName = "Freelancer";
 
-                Intent intent = new Intent(ApplyJobActivity.this, FreelancerDashboardActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-                startActivity(intent);
-                finish();
+                Application app = new Application(
+                        appId,
+                        currentJob,
+                        coverLetter,
+                        cvUrlOrName,
+                        "Pending",
+                        applicantName,
+                        applicantEmail
+                );
+
+                // Save in-memory DataManager
+                DataManager.addApplication(app);
+
+                // Save to Firestore DB collection "Applications"
+                Map<String, Object> map = new HashMap<>();
+                map.put("id", appId);
+                map.put("freelancerUid", freelancerUid);
+                map.put("applicantName", applicantName);
+                map.put("applicantEmail", applicantEmail);
+                map.put("jobId", currentJob != null ? currentJob.getId() : "");
+                map.put("jobTitle", currentJob != null ? currentJob.getTitle() : "");
+                map.put("company", currentJob != null ? currentJob.getCompany() : "");
+                map.put("employerContact", currentJob != null ? currentJob.getEmployerContact() : "");
+                map.put("coverLetter", coverLetter);
+                map.put("resumeFileName", cvUrlOrName);
+                map.put("resumeUrl", cvUrlOrName);
+                map.put("status", "Pending");
+                map.put("createdAt", System.currentTimeMillis());
+
+                FirebaseFirestore.getInstance().collection("Applications").document(appId).set(map)
+                    .addOnCompleteListener(task -> {
+                        Toast.makeText(this, "Application Submitted to " + (currentJob != null ? currentJob.getCompany() : "Employer") + "!", Toast.LENGTH_LONG).show();
+
+                        Intent intent = new Intent(ApplyJobActivity.this, FreelancerDashboardActivity.class);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
+                        startActivity(intent);
+                        finish();
+                    });
+            })
+            .addOnFailureListener(e -> {
+                btnSubmit.setEnabled(true);
+                btnSubmit.setText("Submit Application");
+                Toast.makeText(this, "Error submitting application", Toast.LENGTH_SHORT).show();
             });
     }
 
