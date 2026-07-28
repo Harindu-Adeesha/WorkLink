@@ -11,7 +11,9 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class EmployerJobAdapter extends RecyclerView.Adapter<EmployerJobAdapter.ViewHolder> {
 
@@ -21,15 +23,28 @@ public class EmployerJobAdapter extends RecyclerView.Adapter<EmployerJobAdapter.
     }
 
     private List<Job> jobsList;
+    private Map<String, Float> ratingsMap;
     private final OnJobActionListener listener;
 
     public EmployerJobAdapter(List<Job> jobsList, OnJobActionListener listener) {
-        this.jobsList = jobsList;
-        this.listener = listener;
+        this.jobsList   = jobsList;
+        this.listener   = listener;
+        this.ratingsMap = Collections.emptyMap();
+    }
+
+    public EmployerJobAdapter(List<Job> jobsList, Map<String, Float> ratingsMap, OnJobActionListener listener) {
+        this.jobsList   = jobsList;
+        this.ratingsMap = ratingsMap != null ? ratingsMap : Collections.emptyMap();
+        this.listener   = listener;
     }
 
     public void updateJobs(List<Job> newList) {
         this.jobsList = newList;
+        notifyDataSetChanged();
+    }
+
+    public void updateRatings(Map<String, Float> newRatings) {
+        this.ratingsMap = newRatings != null ? newRatings : Collections.emptyMap();
         notifyDataSetChanged();
     }
 
@@ -48,7 +63,16 @@ public class EmployerJobAdapter extends RecyclerView.Adapter<EmployerJobAdapter.
         holder.tvCategory.setText(job.getCategory());
         holder.tvSalary.setText(job.getSalary());
         holder.tvDeadline.setText("Deadline: " + job.getDeadline());
-        holder.tvRating.setText("★ " + job.getEmployerRating());
+
+        // Show average rating from reviews; fall back to employerRating if no reviews yet
+        Float avgRating = ratingsMap.get(job.getId());
+        if (avgRating != null) {
+            holder.tvRating.setText(String.format("★ %.1f", avgRating));
+        } else if (job.getEmployerRating() > 0) {
+            holder.tvRating.setText(String.format("★ %.1f", job.getEmployerRating()));
+        } else {
+            holder.tvRating.setText("★ New");
+        }
 
         holder.btnEdit.setOnClickListener(v -> listener.onEditJob(job));
 

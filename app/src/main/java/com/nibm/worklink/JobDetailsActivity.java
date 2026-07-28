@@ -80,9 +80,23 @@ public class JobDetailsActivity extends AppCompatActivity {
         TextView tvEmployerDesc = findViewById(R.id.tv_employer_desc);
 
         tvEmployerName.setText(currentJob.getCompany());
-        tvEmployerRating.setText("★ " + currentJob.getEmployerRating() + " Rating");
+        if (currentJob.getEmployerRating() > 0) {
+            tvEmployerRating.setText("★ " + String.format("%.1f", currentJob.getEmployerRating()) + " Rating");
+        } else {
+            tvEmployerRating.setText("★ New Rating");
+        }
         tvEmployerContact.setText("Contact: " + currentJob.getEmployerContact());
         tvEmployerDesc.setText(currentJob.getEmployerDescription());
+
+        // Fetch live calculated average rating for this specific job
+        RatingRepository.fetchJobRatings(ratingsMap -> {
+            if (currentJob != null) {
+                Float avgRating = ratingsMap.get(currentJob.getId());
+                if (avgRating != null) {
+                    tvEmployerRating.setText(String.format("★ %.1f Rating", avgRating));
+                }
+            }
+        });
 
         Button btnApply = findViewById(R.id.btn_apply);
         btnApply.setOnClickListener(v -> {

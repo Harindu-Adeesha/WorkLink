@@ -204,6 +204,11 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     recyclerJobs.setVisibility(View.VISIBLE);
                     jobAdapter.updateJobs(myJobs);
                 }
+
+                // Fetch real review-based ratings and push to adapter
+                RatingRepository.fetchJobRatings(ratingsMap -> {
+                    if (jobAdapter != null) jobAdapter.updateRatings(ratingsMap);
+                });
             })
             .addOnFailureListener(e -> {
                 Toast.makeText(this, "Failed to load jobs", Toast.LENGTH_SHORT).show();

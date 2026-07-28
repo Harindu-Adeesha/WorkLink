@@ -221,6 +221,13 @@ public class FreelancerDashboardActivity extends AppCompatActivity
             } else {
                 jobAdapter.updateJobs(filteredJobs);
             }
+
+            // Fetch real ratings from Reviews collection and push to adapter
+            RatingRepository.fetchJobRatings(ratingsMap -> {
+                if (jobAdapter != null) {
+                    jobAdapter.updateRatings(ratingsMap);
+                }
+            });
         }).addOnFailureListener(e -> {
             List<Job> jobsList = DataManager.getJobsByCategory(category);
             if (jobAdapter == null) {
@@ -229,6 +236,9 @@ public class FreelancerDashboardActivity extends AppCompatActivity
             } else {
                 jobAdapter.updateJobs(jobsList);
             }
+            RatingRepository.fetchJobRatings(ratingsMap -> {
+                if (jobAdapter != null) jobAdapter.updateRatings(ratingsMap);
+            });
         });
     }
 
@@ -296,6 +306,21 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                     } else {
                         appAdapter.updateApplications(appsList);
                     }
+
+                    // Fetch user's existing reviews to disable review button for already reviewed jobs
+                    db.collection("Reviews").whereEqualTo("reviewerUid", currentUid).get()
+                        .addOnSuccessListener(reviewSnaps -> {
+                            java.util.Set<String> reviewedJobIds = new java.util.HashSet<>();
+                            if (reviewSnaps != null) {
+                                for (DocumentSnapshot rDoc : reviewSnaps.getDocuments()) {
+                                    String rJobId = rDoc.getString("jobId");
+                                    if (rJobId != null) reviewedJobIds.add(rJobId);
+                                }
+                            }
+                            if (appAdapter != null) {
+                                appAdapter.updateReviewedJobIds(reviewedJobIds);
+                            }
+                        });
                 }
             })
             .addOnFailureListener(e -> {
@@ -561,9 +586,9 @@ public class FreelancerDashboardActivity extends AppCompatActivity
             String company = job != null ? job.getCompany() : "";
 
             String reviewerUid = currentUid != null ? currentUid : "";
+            // Use deterministic document ID (reviewerUid_jobId) to prevent duplicate reviews per user per job
+            String reviewId = reviewerUid.isEmpty() ? String.valueOf(System.currentTimeMillis()) : reviewerUid + "_" + jobId;
 
-            // Build Firestore document
-            String reviewId = String.valueOf(System.currentTimeMillis());
             java.util.Map<String, Object> map = new java.util.HashMap<>();
             map.put("id", reviewId);
             map.put("jobId", jobId);
@@ -578,6 +603,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                 .addOnSuccessListener(aVoid -> {
                     Toast.makeText(this, "Review submitted! Thank you.", Toast.LENGTH_SHORT).show();
                     dialog.dismiss();
+                    loadApplications();
                 })
                 .addOnFailureListener(e -> {
                     btnSubmit.setEnabled(true);
@@ -593,13 +619,35 @@ public class FreelancerDashboardActivity extends AppCompatActivity
 
     @Override
     public void onDeleteApplication(String appId) {
+        db.collection("Applications").document(appId).delete().addOnSuccessListener(aVoid -> {
+            Toast.makeText(this, "Application removed", Toast.LENGTH_SHORT).show();
+            loadApplications();
+        });
         DataManager.deleteApplication(appId);
-        loadApplications();
     }
 
     @Override
     public void onReviewApplication(String jobId, String jobTitle) {
-        showReviewDialog(jobId, jobTitle);
+        if (currentUid == null || currentUid.isEmpty()) {
+            showReviewDialog(jobId, jobTitle);
+            return;
+        }
+
+        String reviewDocId = currentUid + "_" + jobId;
+        db.collection("Reviews").document(reviewDocId).get()
+            .addOnSuccessListener(doc -> {
+                if (doc.exists()) {
+                    new AlertDialog.Builder(this)
+                        .setTitle("Already Reviewed")
+                        .setMessage("You have already submitted a review for \"" + jobTitle + "\".")
+                        .setPositiveButton("OK", null)
+                        .show();
+                    loadApplications();
+                } else {
+                    showReviewDialog(jobId, jobTitle);
+                }
+            })
+            .addOnFailureListener(e -> showReviewDialog(jobId, jobTitle));
     }
 }
 

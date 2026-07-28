@@ -9,18 +9,32 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class JobAdapter extends RecyclerView.Adapter<JobAdapter.ViewHolder> {
 
     private List<Job> jobsList;
+    private Map<String, Float> ratingsMap;
 
     public JobAdapter(List<Job> jobsList) {
-        this.jobsList = jobsList;
+        this.jobsList   = jobsList;
+        this.ratingsMap = Collections.emptyMap();
+    }
+
+    public JobAdapter(List<Job> jobsList, Map<String, Float> ratingsMap) {
+        this.jobsList   = jobsList;
+        this.ratingsMap = ratingsMap != null ? ratingsMap : Collections.emptyMap();
     }
 
     public void updateJobs(List<Job> newList) {
         this.jobsList = newList;
+        notifyDataSetChanged();
+    }
+
+    public void updateRatings(Map<String, Float> newRatings) {
+        this.ratingsMap = newRatings != null ? newRatings : Collections.emptyMap();
         notifyDataSetChanged();
     }
 
@@ -38,7 +52,19 @@ public class JobAdapter extends RecyclerView.Adapter<JobAdapter.ViewHolder> {
         holder.tvCompany.setText(job.getCompany());
         holder.tvCategory.setText(job.getCategory());
         holder.tvSalary.setText(job.getSalary());
-        holder.tvRating.setText("★ " + job.getEmployerRating());
+
+        // Show average rating from reviews; fall back to employerRating if no reviews yet
+        Float avgRating = ratingsMap.get(job.getId());
+        if (avgRating != null) {
+            holder.tvRating.setText(String.format("★ %.1f", avgRating));
+            holder.tvRating.setVisibility(View.VISIBLE);
+        } else if (job.getEmployerRating() > 0) {
+            holder.tvRating.setText(String.format("★ %.1f", job.getEmployerRating()));
+            holder.tvRating.setVisibility(View.VISIBLE);
+        } else {
+            holder.tvRating.setText("★ New");
+            holder.tvRating.setVisibility(View.VISIBLE);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             Intent intent = new Intent(v.getContext(), JobDetailsActivity.class);

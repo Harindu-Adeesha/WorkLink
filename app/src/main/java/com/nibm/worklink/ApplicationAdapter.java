@@ -22,15 +22,28 @@ public class ApplicationAdapter extends RecyclerView.Adapter<ApplicationAdapter.
     }
 
     private List<Application> appsList;
+    private java.util.Set<String> reviewedJobIds;
     private final OnApplicationActionListener listener;
 
     public ApplicationAdapter(List<Application> appsList, OnApplicationActionListener listener) {
         this.appsList = appsList;
         this.listener = listener;
+        this.reviewedJobIds = new java.util.HashSet<>();
+    }
+
+    public ApplicationAdapter(List<Application> appsList, java.util.Set<String> reviewedJobIds, OnApplicationActionListener listener) {
+        this.appsList = appsList;
+        this.reviewedJobIds = reviewedJobIds != null ? reviewedJobIds : new java.util.HashSet<>();
+        this.listener = listener;
     }
 
     public void updateApplications(List<Application> newList) {
         this.appsList = newList;
+        notifyDataSetChanged();
+    }
+
+    public void updateReviewedJobIds(java.util.Set<String> newReviewedJobIds) {
+        this.reviewedJobIds = newReviewedJobIds != null ? newReviewedJobIds : new java.util.HashSet<>();
         notifyDataSetChanged();
     }
 
@@ -88,8 +101,19 @@ public class ApplicationAdapter extends RecyclerView.Adapter<ApplicationAdapter.
                     .show();
         });
 
-        holder.btnReview.setOnClickListener(v ->
-                listener.onReviewApplication(app.getJob().getId(), app.getJob().getTitle()));
+        String jobId = app.getJob() != null ? app.getJob().getId() : "";
+        if (reviewedJobIds != null && reviewedJobIds.contains(jobId)) {
+            holder.btnReview.setText("Reviewed ✓");
+            holder.btnReview.setEnabled(false);
+            holder.btnReview.setAlpha(0.5f);
+            holder.btnReview.setOnClickListener(null);
+        } else {
+            holder.btnReview.setText("Give Review");
+            holder.btnReview.setEnabled(true);
+            holder.btnReview.setAlpha(1.0f);
+            holder.btnReview.setOnClickListener(v ->
+                    listener.onReviewApplication(app.getJob().getId(), app.getJob().getTitle()));
+        }
     }
 
     @Override
