@@ -21,7 +21,7 @@ public class JobDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_job_details);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         jobId = getIntent().getStringExtra("job_id");
         if (jobId == null) {
@@ -102,6 +102,7 @@ public class JobDetailsActivity extends AppCompatActivity {
         btnApply.setOnClickListener(v -> {
             Intent intent = new Intent(JobDetailsActivity.this, ApplyJobActivity.class);
             intent.putExtra("job_id", currentJob.getId());
+            intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
             startActivity(intent);
         });
     }

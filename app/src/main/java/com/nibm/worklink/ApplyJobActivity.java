@@ -36,7 +36,7 @@ public class ApplyJobActivity extends AppCompatActivity {
         setContentView(R.layout.activity_apply_job);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         jobId = getIntent().getStringExtra("job_id");
         if (jobId == null) {
@@ -140,7 +140,7 @@ public class ApplyJobActivity extends AppCompatActivity {
                 Toast.makeText(this, "Application Submitted to " + (currentJob != null ? currentJob.getCompany() : "Employer") + "!", Toast.LENGTH_LONG).show();
 
                 Intent intent = new Intent(ApplyJobActivity.this, FreelancerDashboardActivity.class);
-                intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 finish();
             });

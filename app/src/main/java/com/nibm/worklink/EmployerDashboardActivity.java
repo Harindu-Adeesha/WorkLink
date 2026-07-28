@@ -15,6 +15,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -154,6 +155,20 @@ public class EmployerDashboardActivity extends AppCompatActivity
             intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
             startActivity(intent);
             finish();
+        });
+
+        // Handle system back button tab navigation
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (layoutApplicationsTab.getVisibility() == View.VISIBLE || layoutProfileTab.getVisibility() == View.VISIBLE) {
+                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_employer_jobs);
+                    switchTab(layoutJobsTab);
+                    loadEmployerJobs();
+                } else {
+                    finish();
+                }
+            }
         });
 
         // Initialize Feed
