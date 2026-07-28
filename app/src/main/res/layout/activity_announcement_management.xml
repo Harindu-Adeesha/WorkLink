@@ -66,17 +66,99 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
-            android:padding="16dp"
+            android:paddingHorizontal="16dp"
+            android:paddingTop="12dp"
+            android:paddingBottom="4dp"
             android:gravity="center_vertical">
             <TextView
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Announcements"
+                android:text="System Announcements"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 android:textColor="#14213d"/>
         </LinearLayout>
+
+        <!-- Search Input -->
+        <com.google.android.material.card.MaterialCardView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="16dp"
+            android:layout_marginVertical="4dp"
+            app:cardBackgroundColor="@android:color/white"
+            app:cardCornerRadius="8dp"
+            app:cardElevation="1dp"
+            app:strokeWidth="1dp"
+            app:strokeColor="#E9ECEF">
+
+            <EditText
+                android:id="@+id/et_search_announcements"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:hint="Search announcements by title, priority..."
+                android:background="@null"
+                android:drawableStart="@android:drawable/ic_menu_search"
+                android:drawablePadding="8dp"
+                android:paddingHorizontal="12dp"
+                android:textSize="14sp"
+                android:textColor="#14213d"
+                android:textColorHint="#ADB5BD"
+                android:inputType="text"/>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Priority Filter Chip Group -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingHorizontal="16dp"
+            android:layout_marginVertical="4dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chip_group_priority"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:singleSelection="true"
+                app:selectionRequired="true">
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_prio_all"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:checked="true"
+                    android:text="All Priorities" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_prio_urgent"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Urgent" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_prio_important"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Important" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_prio_info"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Info" />
+
+                <com.google.android.material.chip.Chip
+                    android:id="@+id/chip_prio_maintenance"
+                    style="@style/Widget.MaterialComponents.Chip.Choice"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Maintenance" />
+            </com.google.android.material.chip.ChipGroup>
+        </HorizontalScrollView>
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler_announcements"
@@ -109,4 +191,5 @@
         app:itemTextColor="@color/nav_item_color"/>
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
 

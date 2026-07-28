@@ -90,9 +90,12 @@
 
             <!-- Metric Cards -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_categories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
@@ -114,10 +117,11 @@
                         android:textColor="#6C757D"/>
                         
                     <TextView
+                        android:id="@+id/tv_category_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/cat_title"
-                        android:text="124"
+                        android:text="0"
                         android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="#14213d"
@@ -136,9 +140,12 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_users"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
@@ -157,21 +164,34 @@
                         android:textStyle="bold"
                         android:textColor="#6C757D"/>
                     <TextView
+                        android:id="@+id/tv_user_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/users_title"
-                        android:text="8,432"
+                        android:text="0"
                         android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="#14213d"
                         android:layout_marginTop="8dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:text="▲"
+                        android:textColor="#198754"
+                        android:background="#D1F2E5"
+                        android:padding="8dp"/>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
             
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_announcements"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="24dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
@@ -190,14 +210,24 @@
                         android:textStyle="bold"
                         android:textColor="#6C757D"/>
                     <TextView
+                        android:id="@+id/tv_announcement_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/ann_title"
-                        android:text="06"
+                        android:text="0"
                         android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="#14213d"
                         android:layout_marginTop="8dp"/>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_alignParentEnd="true"
+                        android:layout_alignParentTop="true"
+                        android:text="▲"
+                        android:textColor="#FD7E14"
+                        android:background="#FFF3E0"
+                        android:padding="8dp"/>
                 </RelativeLayout>
             </com.google.android.material.card.MaterialCardView>
 
