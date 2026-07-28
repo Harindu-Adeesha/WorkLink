@@ -62,6 +62,7 @@ public class NotificationsActivity extends AppCompatActivity {
                     if (id == R.id.nav_employer_notifications) {
                         return true;
                     }
+                    EmployerDashboardActivity.pendingTargetTabId = id;
                     finish();
                     return true;
                 });
@@ -82,6 +83,26 @@ public class NotificationsActivity extends AppCompatActivity {
 
         List<EmployerNotificationAdapter.NotificationItem> items = new ArrayList<>();
 
+        // If userRole not passed, fetch from Firestore Users collection
+        if (userRole == null || userRole.trim().isEmpty()) {
+            db.collection("Users").document(currentUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        userRole = doc.getString("role");
+                        TextView tvRole = findViewById(R.id.tv_notifications_role);
+                        if (tvRole != null && userRole != null) {
+                            tvRole.setText(userRole);
+                        }
+                    }
+                    fetchNotificationsAndAnnouncements(items);
+                })
+                .addOnFailureListener(e -> fetchNotificationsAndAnnouncements(items));
+        } else {
+            fetchNotificationsAndAnnouncements(items);
+        }
+    }
+
+    private void fetchNotificationsAndAnnouncements(List<EmployerNotificationAdapter.NotificationItem> items) {
         // 1. Fetch personal Notifications
         db.collection("Notifications")
             .whereEqualTo("recipientId", currentUid)
@@ -103,18 +124,35 @@ public class NotificationsActivity extends AppCompatActivity {
                         for (DocumentSnapshot doc : annSnap) {
                             String audience = doc.getString("targetAudience");
                             if (isAudienceRelevant(audience)) {
-                                // Read the Firestore Timestamp for ordering
                                 long createdAtMs = 0;
                                 com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
-                                if (ts != null) createdAtMs = ts.toDate().getTime();
+                                if (ts != null) {
+                                    createdAtMs = ts.toDate().getTime();
+                                } else {
+                                    Long l = doc.getLong("createdAt");
+                                    if (l != null) createdAtMs = l;
+                                }
+
+                                String date = doc.getString("date");
+                                if (date == null || date.trim().isEmpty()) {
+                                    if (createdAtMs > 0) {
+                                        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                                        date = sdf.format(new java.util.Date(createdAtMs));
+                                    } else {
+                                        date = "General";
+                                    }
+                                }
+
+                                String priority = doc.getString("priority");
+                                if (priority == null) priority = "Info";
 
                                 Announcement ann = new Announcement(
                                     doc.getId(),
                                     doc.getString("title"),
                                     doc.getString("message"),
-                                    audience,
-                                    doc.getString("priority"),
-                                    doc.getString("date")
+                                    audience != null ? audience : "All Users",
+                                    priority,
+                                    date
                                 );
                                 items.add(new EmployerNotificationAdapter.NotificationItem(ann, createdAtMs));
                             }
@@ -140,13 +178,19 @@ public class NotificationsActivity extends AppCompatActivity {
     }
 
     private boolean isAudienceRelevant(String audience) {
-        if (audience == null) return false;
+        if (audience == null || audience.trim().isEmpty()) return true;
         String a = audience.trim().toLowerCase();
-        if (a.equals("all")) return true;
-        if (userRole != null) {
+        
+        // Match "All", "All Users", "Everyone", etc.
+        if (a.contains("all") || a.contains("everyone") || a.contains("public")) {
+            return true;
+        }
+
+        if (userRole != null && !userRole.trim().isEmpty()) {
             String roleLower = userRole.trim().toLowerCase();
             return a.contains(roleLower) || roleLower.contains(a);
         }
-        return false;
+
+        return true;
     }
 }

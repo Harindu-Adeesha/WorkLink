@@ -49,6 +49,9 @@ public class EmployerDashboardActivity extends AppCompatActivity
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
 
+    // Static target tab handler for navigation from sub-activities (e.g., Notifications)
+    public static int pendingTargetTabId = 0;
+
     // Navigation History Stack
     private final java.util.Stack<Integer> tabHistory = new java.util.Stack<>();
     private boolean isNavigatingBack = false;
@@ -231,6 +234,13 @@ public class EmployerDashboardActivity extends AppCompatActivity
     @Override
     protected void onResume() {
         super.onResume();
+        if (pendingTargetTabId != 0) {
+            int targetId = pendingTargetTabId;
+            pendingTargetTabId = 0;
+            if (bottomNav != null) {
+                bottomNav.setSelectedItemId(targetId);
+            }
+        }
         loadEmployerJobs();
         loadEmployerApplications();
         loadEmployerProfileTab();
