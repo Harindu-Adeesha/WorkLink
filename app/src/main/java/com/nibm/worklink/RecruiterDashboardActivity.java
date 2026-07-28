@@ -2,6 +2,8 @@ package com.nibm.worklink;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.TextView;
@@ -34,9 +36,11 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
 
-    // Adapters
+    // Adapters & User Data
     private RecruiterJobAdapter jobAdapter;
     private RecruiterUserAdapter userAdapter;
+    private List<RecruiterUserAdapter.UserModel> allVerifyUsers = new ArrayList<>();
+    private TextInputEditText etSearchVerifyUsers;
 
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
@@ -92,6 +96,19 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
         }
         if (btnSaveProfile != null) {
             btnSaveProfile.setOnClickListener(v -> saveProfileData());
+        }
+
+        // Search Bar for Verify Users
+        etSearchVerifyUsers = findViewById(R.id.et_search_verify_users);
+        if (etSearchVerifyUsers != null) {
+            etSearchVerifyUsers.addTextChangedListener(new TextWatcher() {
+                @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int before, int count) {
+                    filterVerifyUsers(s.toString());
+                }
+                @Override public void afterTextChanged(Editable s) {}
+            });
         }
 
         // Bind Bottom Navigation
@@ -295,28 +312,58 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     private void loadUsers() {
         RecyclerView recyclerUsers = findViewById(R.id.recycler_recruiter_users);
         db.collection("Users").get().addOnCompleteListener(task -> {
-            List<RecruiterUserAdapter.UserModel> userList = new ArrayList<>();
+            allVerifyUsers.clear();
             if (task.isSuccessful() && task.getResult() != null) {
                 for (DocumentSnapshot doc : task.getResult()) {
                     String uid = doc.getId();
                     String name = doc.getString("name");
                     String email = doc.getString("email");
                     String role = doc.getString("role");
+                    String skills = doc.getString("skills");
+                    String bio = doc.getString("bio");
                     Boolean isVerified = doc.getBoolean("isVerified");
                     boolean verified = isVerified != null && isVerified;
 
                     if (name == null) name = "User";
                     if (role == null) role = "Member";
 
-                    // Only show unverified users in verify users tab
-                    if (!verified) {
-                        userList.add(new RecruiterUserAdapter.UserModel(uid, name, email, role, false));
+                    // Only show unverified non-admin and non-recruiter users in verify users tab
+                    if (!verified && !"Admin".equalsIgnoreCase(role) && !"Recruiter".equalsIgnoreCase(role)) {
+                        allVerifyUsers.add(new RecruiterUserAdapter.UserModel(uid, name, email, role, skills, bio, false));
                     }
                 }
             }
-            userAdapter = new RecruiterUserAdapter(userList);
+            userAdapter = new RecruiterUserAdapter(new ArrayList<>(allVerifyUsers));
             recyclerUsers.setAdapter(userAdapter);
+
+            String query = etSearchVerifyUsers != null && etSearchVerifyUsers.getText() != null ? etSearchVerifyUsers.getText().toString() : "";
+            if (!query.trim().isEmpty()) {
+                filterVerifyUsers(query);
+            }
         });
+    }
+
+    private void filterVerifyUsers(String query) {
+        if (allVerifyUsers == null) return;
+        List<RecruiterUserAdapter.UserModel> filtered = new ArrayList<>();
+        String lowerQuery = query.toLowerCase().trim();
+
+        for (RecruiterUserAdapter.UserModel user : allVerifyUsers) {
+            boolean match = lowerQuery.isEmpty()
+                    || (user.name != null && user.name.toLowerCase().contains(lowerQuery))
+                    || (user.email != null && user.email.toLowerCase().contains(lowerQuery))
+                    || (user.role != null && user.role.toLowerCase().contains(lowerQuery))
+                    || (user.skills != null && user.skills.toLowerCase().contains(lowerQuery))
+                    || (user.bio != null && user.bio.toLowerCase().contains(lowerQuery));
+
+            if (match) {
+                filtered.add(user);
+            }
+        }
+
+        if (userAdapter != null) {
+            userAdapter.updateList(filtered);
+        }
     }
 
     private void loadReviews() {
