@@ -12,6 +12,8 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +31,14 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     private RecruiterJobAdapter jobAdapter;
     private RecruiterUserAdapter userAdapter;
 
+    private FirebaseFirestore db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_recruiter_dashboard);
+
+        db = FirebaseFirestore.getInstance();
 
         // Bind Tab Layouts
         layoutDashboardTab = findViewById(R.id.layout_recruiter_dashboard_tab);
@@ -106,6 +112,14 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
         });
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNav != null && bottomNav.getSelectedItemId() == R.id.nav_recruiter_jobs) {
+            loadJobs();
+        }
+    }
+
     private void switchTab(View activeTab) {
         layoutDashboardTab.setVisibility(View.GONE);
         layoutJobsTab.setVisibility(View.GONE);
@@ -117,10 +131,20 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     }
 
     private void loadJobs() {
-        List<Job> jobs = DataManager.getJobs();
         RecyclerView recyclerJobs = findViewById(R.id.recycler_recruiter_jobs);
-        jobAdapter = new RecruiterJobAdapter(new ArrayList<>(jobs));
-        recyclerJobs.setAdapter(jobAdapter);
+        db.collection("Jobs").get().addOnCompleteListener(task -> {
+            List<Job> jobList = new ArrayList<>();
+            if (task.isSuccessful() && task.getResult() != null) {
+                for (DocumentSnapshot doc : task.getResult()) {
+                    Job job = doc.toObject(Job.class);
+                    if (job != null && !job.isVerified() && !"Verified".equalsIgnoreCase(job.getStatus())) {
+                        jobList.add(job);
+                    }
+                }
+            }
+            jobAdapter = new RecruiterJobAdapter(jobList);
+            recyclerJobs.setAdapter(jobAdapter);
+        });
     }
 
     private void loadUsers() {

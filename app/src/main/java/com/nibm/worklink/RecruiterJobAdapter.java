@@ -38,6 +38,8 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
             intent.putExtra(JobActionActivity.EXTRA_ACTION_TYPE, JobActionActivity.ACTION_VERIFY);
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
         });
 
@@ -46,22 +48,19 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
             intent.putExtra(JobActionActivity.EXTRA_ACTION_TYPE, JobActionActivity.ACTION_WARN);
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
         });
 
         holder.btnRemove.setOnClickListener(v -> {
-            // Note: Since this launches an activity, the actual removal in the adapter would require 
-            // a result callback or event bus in a real app. For UI demonstration, we still launch the interface.
             android.content.Intent intent = new android.content.Intent(v.getContext(), JobActionActivity.class);
             intent.putExtra(JobActionActivity.EXTRA_ACTION_TYPE, JobActionActivity.ACTION_REMOVE);
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
-            
-            // For demo purposes, we will also remove it from the list here so the recruiter sees the change immediately
-            jobsList.remove(position);
-            notifyItemRemoved(position);
-            notifyItemRangeChanged(position, jobsList.size());
         });
     }
 

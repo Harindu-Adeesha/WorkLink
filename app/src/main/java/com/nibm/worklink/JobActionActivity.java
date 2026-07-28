@@ -10,21 +10,31 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class JobActionActivity extends AppCompatActivity {
 
     public static final String EXTRA_ACTION_TYPE = "action_type";
     public static final String EXTRA_JOB_ID = "job_id";
     public static final String EXTRA_JOB_TITLE = "job_title";
+    public static final String EXTRA_EMPLOYER_CONTACT = "employer_contact";
+    public static final String EXTRA_COMPANY = "company";
 
     public static final String ACTION_VERIFY = "VERIFY";
     public static final String ACTION_WARN = "WARN";
     public static final String ACTION_REMOVE = "REMOVE";
 
+    private FirebaseFirestore db;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_job_action);
+
+        db = FirebaseFirestore.getInstance();
 
         // Set up Toolbar with back button
         androidx.appcompat.widget.Toolbar toolbar = findViewById(R.id.toolbar_job_action);
@@ -38,6 +48,10 @@ public class JobActionActivity extends AppCompatActivity {
         String actionType = getIntent().getStringExtra(EXTRA_ACTION_TYPE);
         String jobId = getIntent().getStringExtra(EXTRA_JOB_ID);
         String jobTitle = getIntent().getStringExtra(EXTRA_JOB_TITLE);
+        String employerContact = getIntent().getStringExtra(EXTRA_EMPLOYER_CONTACT);
+        String company = getIntent().getStringExtra(EXTRA_COMPANY);
+
+        String recipientId = (employerContact != null && !employerContact.isEmpty()) ? employerContact : (company != null ? company : "unknown_user");
 
         TextView tvTitle = findViewById(R.id.tv_action_title);
         TextView tvJobTitle = findViewById(R.id.tv_action_job_title);
@@ -71,19 +85,93 @@ public class JobActionActivity extends AppCompatActivity {
 
         btnConfirm.setOnClickListener(v -> {
             if (ACTION_WARN.equals(actionType)) {
-                String reason = etReason.getText().toString();
+                String reason = etReason.getText().toString().trim();
                 if (reason.isEmpty()) {
-                    etReason.setError("Required");
+                    etReason.setError("Reason is required");
                     return;
                 }
-                Toast.makeText(this, "Warning issued for: " + jobTitle + "\nReason: " + reason, Toast.LENGTH_LONG).show();
+                executeWarnAction(jobId, jobTitle, recipientId, reason);
             } else if (ACTION_VERIFY.equals(actionType)) {
-                Toast.makeText(this, "Job Verified: " + jobTitle, Toast.LENGTH_SHORT).show();
+                executeVerifyAction(jobId, jobTitle, recipientId);
             } else if (ACTION_REMOVE.equals(actionType)) {
-                Toast.makeText(this, "Job Removed: " + jobTitle, Toast.LENGTH_SHORT).show();
-                // In a real app we'd trigger a broadcast or callback to remove it from the list
+                executeRemoveAction(jobId, jobTitle, recipientId);
             }
-            finish();
         });
+    }
+
+    private void executeVerifyAction(String jobId, String jobTitle, String recipientId) {
+        // 1. Update DB / Firestore Jobs collection & DataManager
+        if (jobId != null) {
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("status", "Verified");
+            updateData.put("isVerified", true);
+            db.collection("Jobs").document(jobId).update(updateData);
+
+            Job localJob = DataManager.getJobById(jobId);
+            if (localJob != null) {
+                localJob.setStatus("Verified");
+                localJob.setVerified(true);
+            }
+        }
+
+        // 2. Create Notification in new Firestore collection "Notifications"
+        createNotification(recipientId, "Job Posting Verified",
+                "Your job posting '" + jobTitle + "' has been verified by a recruiter.",
+                ACTION_VERIFY, jobId, jobTitle);
+
+        Toast.makeText(this, "Job Verified: " + jobTitle, Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private void executeWarnAction(String jobId, String jobTitle, String recipientId, String reason) {
+        // 1. Update DB / Firestore Jobs collection & DataManager
+        if (jobId != null) {
+            Map<String, Object> updateData = new HashMap<>();
+            updateData.put("status", "Warned");
+            updateData.put("warningReason", reason);
+            db.collection("Jobs").document(jobId).update(updateData);
+
+            Job localJob = DataManager.getJobById(jobId);
+            if (localJob != null) {
+                localJob.setStatus("Warned");
+            }
+        }
+
+        // 2. Create Notification in new Firestore collection "Notifications"
+        createNotification(recipientId, "Warning Issued for Job",
+                "Warning for job '" + jobTitle + "': " + reason,
+                ACTION_WARN, jobId, jobTitle);
+
+        Toast.makeText(this, "Warning issued for: " + jobTitle, Toast.LENGTH_LONG).show();
+        finish();
+    }
+
+    private void executeRemoveAction(String jobId, String jobTitle, String recipientId) {
+        // 1. Delete from DB / Firestore & DataManager
+        if (jobId != null) {
+            db.collection("Jobs").document(jobId).delete();
+            DataManager.deleteJob(jobId);
+        }
+
+        // 2. Create Notification in new Firestore collection "Notifications"
+        createNotification(recipientId, "Job Posting Removed",
+                "Your job posting '" + jobTitle + "' was removed by a recruiter.",
+                ACTION_REMOVE, jobId, jobTitle);
+
+        Toast.makeText(this, "Job Removed: " + jobTitle, Toast.LENGTH_SHORT).show();
+        finish();
+    }
+
+    private void createNotification(String recipientId, String title, String message, String type, String jobId, String jobTitle) {
+        String notifId = db.collection("Notifications").document().getId();
+        long timestamp = System.currentTimeMillis();
+
+        Notification notification = new Notification(notifId, recipientId, title, message, type, jobId, jobTitle, timestamp);
+
+        // Save to Firestore "Notifications" collection
+        db.collection("Notifications").document(notifId).set(notification);
+
+        // Save to in-memory DataManager
+        DataManager.addNotification(notification);
     }
 }
