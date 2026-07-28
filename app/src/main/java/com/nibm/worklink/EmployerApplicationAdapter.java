@@ -65,11 +65,17 @@ public class EmployerApplicationAdapter extends RecyclerView.Adapter<EmployerApp
                 Context ctx = v.getContext();
                 String rawName = app.getApplicantName() != null ? app.getApplicantName() : "Applicant";
                 String cleanName = rawName.replaceAll("[^a-zA-Z0-9._-]", "_");
-                String fileName = "CV_" + cleanName + ".pdf";
+
+                // Include job title + application ID to uniquely identify each CV on disk
+                // so two applications from the same person (different jobs) never overwrite each other
+                String jobTitle = (app.getJob() != null && app.getJob().getTitle() != null)
+                        ? app.getJob().getTitle().replaceAll("[^a-zA-Z0-9._-]", "_") : "Job";
+                String appId = (app.getId() != null) ? app.getId().substring(0, Math.min(8, app.getId().length())) : "0";
+                String fileName = "CV_" + cleanName + "_" + jobTitle + "_" + appId + ".pdf";
 
                 new AlertDialog.Builder(ctx)
                     .setTitle("Applicant CV / Resume")
-                    .setMessage("Choose how you would like to open " + rawName + "'s CV:")
+                    .setMessage("Choose how you would like to open " + rawName + "'s CV for: " + (app.getJob() != null ? app.getJob().getTitle() : "this job"))
                     .setPositiveButton("Download & Open", (dialog, which) -> {
                         downloadAndOpenCv(ctx, cv, fileName);
                     })

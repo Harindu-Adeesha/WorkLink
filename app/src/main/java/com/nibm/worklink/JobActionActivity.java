@@ -11,20 +11,22 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.google.android.material.textfield.TextInputEditText;
 import com.google.android.material.textfield.TextInputLayout;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class JobActionActivity extends AppCompatActivity {
 
-    public static final String EXTRA_ACTION_TYPE = "action_type";
-    public static final String EXTRA_JOB_ID = "job_id";
-    public static final String EXTRA_JOB_TITLE = "job_title";
-    public static final String EXTRA_EMPLOYER_CONTACT = "employer_contact";
-    public static final String EXTRA_COMPANY = "company";
+    public static final String EXTRA_ACTION_TYPE      = "action_type";
+    public static final String EXTRA_JOB_ID           = "job_id";
+    public static final String EXTRA_JOB_TITLE        = "job_title";
+    public static final String EXTRA_EMPLOYER_CONTACT = "employer_contact"; // email used for display / fallback
+    public static final String EXTRA_EMPLOYER_UID     = "employer_uid";     // direct UID (preferred)
+    public static final String EXTRA_COMPANY          = "company";
 
     public static final String ACTION_VERIFY = "VERIFY";
-    public static final String ACTION_WARN = "WARN";
+    public static final String ACTION_WARN   = "WARN";
     public static final String ACTION_REMOVE = "REMOVE";
 
     private FirebaseFirestore db;
@@ -45,20 +47,19 @@ public class JobActionActivity extends AppCompatActivity {
         }
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        String actionType = getIntent().getStringExtra(EXTRA_ACTION_TYPE);
-        String jobId = getIntent().getStringExtra(EXTRA_JOB_ID);
-        String jobTitle = getIntent().getStringExtra(EXTRA_JOB_TITLE);
-        String employerContact = getIntent().getStringExtra(EXTRA_EMPLOYER_CONTACT);
-        String company = getIntent().getStringExtra(EXTRA_COMPANY);
+        String actionType      = getIntent().getStringExtra(EXTRA_ACTION_TYPE);
+        String jobId           = getIntent().getStringExtra(EXTRA_JOB_ID);
+        String jobTitle        = getIntent().getStringExtra(EXTRA_JOB_TITLE);
+        String employerContact = getIntent().getStringExtra(EXTRA_EMPLOYER_CONTACT); // email
+        String employerUid     = getIntent().getStringExtra(EXTRA_EMPLOYER_UID);     // uid (may be null for old callers)
+        String company         = getIntent().getStringExtra(EXTRA_COMPANY);
 
-        String recipientId = (employerContact != null && !employerContact.isEmpty()) ? employerContact : (company != null ? company : "unknown_user");
-
-        TextView tvTitle = findViewById(R.id.tv_action_title);
+        TextView tvTitle    = findViewById(R.id.tv_action_title);
         TextView tvJobTitle = findViewById(R.id.tv_action_job_title);
-        TextView tvMessage = findViewById(R.id.tv_action_message);
-        TextInputLayout layoutReason = findViewById(R.id.layout_warn_reason);
-        TextInputEditText etReason = findViewById(R.id.et_warn_reason);
-        Button btnCancel = findViewById(R.id.btn_action_cancel);
+        TextView tvMessage  = findViewById(R.id.tv_action_message);
+        TextInputLayout    layoutReason = findViewById(R.id.layout_warn_reason);
+        TextInputEditText  etReason     = findViewById(R.id.et_warn_reason);
+        Button btnCancel  = findViewById(R.id.btn_action_cancel);
         Button btnConfirm = findViewById(R.id.btn_action_confirm);
 
         tvJobTitle.setText("Job: " + jobTitle);
@@ -90,17 +91,49 @@ public class JobActionActivity extends AppCompatActivity {
                     etReason.setError("Reason is required");
                     return;
                 }
-                executeWarnAction(jobId, jobTitle, recipientId, reason);
+                resolveEmployerUidThenAct(employerUid, employerContact, uid ->
+                        executeWarnAction(jobId, jobTitle, uid, reason));
             } else if (ACTION_VERIFY.equals(actionType)) {
-                executeVerifyAction(jobId, jobTitle, recipientId);
+                resolveEmployerUidThenAct(employerUid, employerContact, uid ->
+                        executeVerifyAction(jobId, jobTitle, uid));
             } else if (ACTION_REMOVE.equals(actionType)) {
-                executeRemoveAction(jobId, jobTitle, recipientId);
+                resolveEmployerUidThenAct(employerUid, employerContact, uid ->
+                        executeRemoveAction(jobId, jobTitle, uid));
             }
         });
     }
 
-    private void executeVerifyAction(String jobId, String jobTitle, String recipientId) {
-        // 1. Update DB / Firestore Jobs collection & DataManager
+    /** If we already have the UID (new callers pass EXTRA_EMPLOYER_UID), use it directly.
+     *  Otherwise look it up from Firestore by email, then call the action. */
+    private void resolveEmployerUidThenAct(String knownUid, String email, UidCallback callback) {
+        if (knownUid != null && !knownUid.isEmpty()) {
+            callback.onResolved(knownUid);
+            return;
+        }
+        if (email == null || email.isEmpty()) {
+            callback.onResolved("unknown_employer");
+            return;
+        }
+        db.collection("Users")
+            .whereEqualTo("email", email)
+            .limit(1)
+            .get()
+            .addOnSuccessListener(snap -> {
+                String uid = "unknown_employer";
+                for (QueryDocumentSnapshot doc : snap) {
+                    uid = doc.getId();
+                    break;
+                }
+                callback.onResolved(uid);
+            })
+            .addOnFailureListener(e -> callback.onResolved(email)); // fallback to email if lookup fails
+    }
+
+    interface UidCallback {
+        void onResolved(String uid);
+    }
+
+    private void executeVerifyAction(String jobId, String jobTitle, String recipientUid) {
         if (jobId != null) {
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("status", "Verified");
@@ -114,17 +147,15 @@ public class JobActionActivity extends AppCompatActivity {
             }
         }
 
-        // 2. Create Notification in new Firestore collection "Notifications"
-        createNotification(recipientId, "Job Posting Verified",
-                "Your job posting '" + jobTitle + "' has been verified by a recruiter.",
+        createNotification(recipientUid, "Job Posting Verified ✅",
+                "Your job posting '" + jobTitle + "' has been verified by a recruiter and is now live for freelancers.",
                 ACTION_VERIFY, jobId, jobTitle);
 
         Toast.makeText(this, "Job Verified: " + jobTitle, Toast.LENGTH_SHORT).show();
         finish();
     }
 
-    private void executeWarnAction(String jobId, String jobTitle, String recipientId, String reason) {
-        // 1. Update DB / Firestore Jobs collection & DataManager
+    private void executeWarnAction(String jobId, String jobTitle, String recipientUid, String reason) {
         if (jobId != null) {
             Map<String, Object> updateData = new HashMap<>();
             updateData.put("status", "Warned");
@@ -132,46 +163,40 @@ public class JobActionActivity extends AppCompatActivity {
             db.collection("Jobs").document(jobId).update(updateData);
 
             Job localJob = DataManager.getJobById(jobId);
-            if (localJob != null) {
-                localJob.setStatus("Warned");
-            }
+            if (localJob != null) localJob.setStatus("Warned");
         }
 
-        // 2. Create Notification in new Firestore collection "Notifications"
-        createNotification(recipientId, "Warning Issued for Job",
-                "Warning for job '" + jobTitle + "': " + reason,
+        createNotification(recipientUid, "⚠️ Warning Issued for Job",
+                "Warning for your job posting '" + jobTitle + "': " + reason,
                 ACTION_WARN, jobId, jobTitle);
 
         Toast.makeText(this, "Warning issued for: " + jobTitle, Toast.LENGTH_LONG).show();
         finish();
     }
 
-    private void executeRemoveAction(String jobId, String jobTitle, String recipientId) {
-        // 1. Delete from DB / Firestore & DataManager
+    private void executeRemoveAction(String jobId, String jobTitle, String recipientUid) {
         if (jobId != null) {
             db.collection("Jobs").document(jobId).delete();
             DataManager.deleteJob(jobId);
         }
 
-        // 2. Create Notification in new Firestore collection "Notifications"
-        createNotification(recipientId, "Job Posting Removed",
-                "Your job posting '" + jobTitle + "' was removed by a recruiter.",
+        createNotification(recipientUid, "❌ Job Posting Removed",
+                "Your job posting '" + jobTitle + "' was removed by a recruiter for violating platform guidelines.",
                 ACTION_REMOVE, jobId, jobTitle);
 
         Toast.makeText(this, "Job Removed: " + jobTitle, Toast.LENGTH_SHORT).show();
         finish();
     }
 
-    private void createNotification(String recipientId, String title, String message, String type, String jobId, String jobTitle) {
+    private void createNotification(String recipientUid, String title, String message,
+                                    String type, String jobId, String jobTitle) {
         String notifId = db.collection("Notifications").document().getId();
         long timestamp = System.currentTimeMillis();
 
-        Notification notification = new Notification(notifId, recipientId, title, message, type, jobId, jobTitle, timestamp);
+        Notification notification = new Notification(
+                notifId, recipientUid, title, message, type, jobId, jobTitle, timestamp);
 
-        // Save to Firestore "Notifications" collection
         db.collection("Notifications").document(notifId).set(notification);
-
-        // Save to in-memory DataManager
         DataManager.addNotification(notification);
     }
 }

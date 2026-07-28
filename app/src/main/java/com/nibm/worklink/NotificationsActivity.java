@@ -1,5 +1,6 @@
 package com.nibm.worklink;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -36,6 +37,9 @@ public class NotificationsActivity extends AppCompatActivity {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         currentUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
         userRole = getIntent().getStringExtra("userRole");
+        if (userRole == null || userRole.isEmpty()) {
+            userRole = "Freelancer";
+        }
 
         // Setup Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar_notifications);
@@ -46,30 +50,33 @@ public class NotificationsActivity extends AppCompatActivity {
         toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material);
         toolbar.setNavigationOnClickListener(v -> finish());
 
-        TextView tvRole = findViewById(R.id.tv_notifications_role);
-        if (tvRole != null && userRole != null && !userRole.isEmpty()) {
-            tvRole.setText(userRole);
+        TextView tvRoleBadge = findViewById(R.id.tv_notifications_role_badge);
+        if (tvRoleBadge != null) {
+            tvRoleBadge.setText(userRole);
         }
 
         // Setup Bottom Navigation
         BottomNavigationView bottomNav = findViewById(R.id.notifications_bottom_navigation);
-        if (bottomNav != null) {
-            if ("Employer".equalsIgnoreCase(userRole)) {
-                bottomNav.setVisibility(View.VISIBLE);
-                bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
-                bottomNav.setOnItemSelectedListener(item -> {
-                    int id = item.getItemId();
-                    if (id == R.id.nav_employer_notifications) {
-                        return true;
-                    }
-                    EmployerDashboardActivity.pendingTargetTabId = id;
-                    finish();
-                    return true;
-                });
-            } else {
-                bottomNav.setVisibility(View.GONE);
-            }
+        if ("Freelancer".equalsIgnoreCase(userRole)) {
+            bottomNav.getMenu().clear();
+            bottomNav.inflateMenu(R.menu.freelancer_nav_menu);
+            bottomNav.setSelectedItemId(R.id.nav_freelancer_notifications);
+        } else {
+            bottomNav.getMenu().clear();
+            bottomNav.inflateMenu(R.menu.employer_nav_menu);
+            bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
         }
+        bottomNav.setOnItemSelectedListener(item -> {
+            int id = item.getItemId();
+            if (id == R.id.nav_employer_notifications || id == R.id.nav_freelancer_notifications) {
+                return true; // already here
+            }
+            Intent data = new Intent();
+            data.putExtra("selected_nav_id", id);
+            setResult(RESULT_OK, data);
+            finish();
+            return true;
+        });
 
         recyclerView = findViewById(R.id.recycler_notifications_page);
         tvEmpty      = findViewById(R.id.tv_empty_notifications_page);

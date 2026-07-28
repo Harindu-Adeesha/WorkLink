@@ -81,7 +81,31 @@ public class EmployerDashboardActivity extends AppCompatActivity
     private FirebaseFirestore db;
     private String currentUid;
     private String employerEmail = "";
-    private int lastSelectedNavId = R.id.nav_employer_jobs; // track last real tab
+    private final androidx.activity.result.ActivityResultLauncher<Intent> notificationsLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    int targetNavId = result.getData().getIntExtra("selected_nav_id", -1);
+                    if (targetNavId != -1) {
+                        navigateToTab(targetNavId);
+                    }
+                }
+            });
+
+    private void navigateToTab(int navId) {
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(navId);
+        }
+        if (navId == R.id.nav_employer_jobs) {
+            switchTab(layoutJobsTab);
+            loadEmployerJobs();
+        } else if (navId == R.id.nav_employer_applications) {
+            switchTab(layoutApplicationsTab);
+            loadEmployerApplications();
+        } else if (navId == R.id.nav_employer_profile) {
+            switchTab(layoutProfileTab);
+            loadEmployerProfileTab();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -111,25 +135,19 @@ public class EmployerDashboardActivity extends AppCompatActivity
             }
 
             if (id == R.id.nav_employer_jobs) {
-                lastSelectedNavId = id;
                 switchTab(layoutJobsTab);
                 loadEmployerJobs();
                 return true;
             } else if (id == R.id.nav_employer_applications) {
-                lastSelectedNavId = id;
                 switchTab(layoutApplicationsTab);
                 loadEmployerApplications();
                 return true;
             } else if (id == R.id.nav_employer_notifications) {
-                // Launch alerts screen; keep nav on the previous real tab
                 Intent intent = new Intent(EmployerDashboardActivity.this, NotificationsActivity.class);
                 intent.putExtra("userRole", "Employer");
-                startActivity(intent);
-                // Immediately revert nav highlight back to last real tab so it's correct on return
-                bottomNav.post(() -> bottomNav.setSelectedItemId(lastSelectedNavId));
-                return false; // returning false prevents the item being highlighted
+                notificationsLauncher.launch(intent);
+                return false;
             } else if (id == R.id.nav_employer_profile) {
-                lastSelectedNavId = id;
                 switchTab(layoutProfileTab);
                 loadEmployerProfileTab();
                 return true;
@@ -583,6 +601,7 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     Job updated = new Job(
                             existingJob.getId(), title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    updated.setEmployerUid(currentUid); // stamp UID so notifications route correctly
                     db.collection("Jobs").document(existingJob.getId()).set(updated)
                         .addOnSuccessListener(aVoid -> {
                             Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
@@ -595,6 +614,7 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     Job newJob = new Job(
                             newId, title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    newJob.setEmployerUid(currentUid); // stamp UID so notifications route correctly
                     ref.set(newJob).addOnSuccessListener(aVoid -> {
                         Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
                         loadEmployerJobs();
