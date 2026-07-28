@@ -36,6 +36,17 @@
                 android:textSize="18sp"
                 android:textStyle="bold"/>
 
+            <ImageView
+                android:id="@+id/iv_freelancer_notifications"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_gravity="end"
+                android:layout_marginEnd="12dp"
+                android:src="@android:drawable/ic_popup_reminder"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:padding="2dp"
+                app:tint="#035DD6"/>
+
             <TextView
                 android:id="@+id/tv_toolbar_role"
                 android:layout_width="wrap_content"
@@ -536,6 +547,51 @@
                     app:cornerRadius="8dp"/>
             </LinearLayout>
         </ScrollView>
+
+        <!-- TAB 4: NOTIFICATIONS & ANNOUNCEMENTS -->
+        <LinearLayout
+            android:id="@+id/layout_notifications_tab"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:padding="16dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Notifications &amp; Alerts"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:textColor="#14213d"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Stay updated with personal notifications and announcements."
+                android:textColor="#6C757D"
+                android:textSize="14sp"
+                android:layout_marginTop="4dp"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/tv_empty_freelancer_notifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:layout_marginTop="64dp"
+                android:text="No notifications or announcements yet"
+                android:textColor="#ADB5BD"
+                android:textSize="16sp"
+                android:visibility="gone"/>
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recycler_freelancer_notifications"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:paddingBottom="16dp"/>
+        </LinearLayout>
 
     </FrameLayout>
 

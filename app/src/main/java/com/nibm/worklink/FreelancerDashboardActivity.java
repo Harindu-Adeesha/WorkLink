@@ -8,6 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -35,6 +36,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity
 
     private View layoutJobsTab;
     private View layoutApplicationsTab;
+    private View layoutNotificationsTab;
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
 
@@ -51,6 +53,11 @@ public class FreelancerDashboardActivity extends AppCompatActivity
     private RecyclerView recyclerApplications;
     private ApplicationAdapter appAdapter;
     private TextView tvEmptyApplications;
+
+    // Notifications Views
+    private RecyclerView recyclerNotifications;
+    private TextView tvEmptyNotifications;
+    private EmployerNotificationAdapter notificationAdapter;
 
     // Profile Views
     private View profileEmptyState;
@@ -77,7 +84,16 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         // Bind Tabs Layouts
         layoutJobsTab = findViewById(R.id.layout_jobs_tab);
         layoutApplicationsTab = findViewById(R.id.layout_applications_tab);
+        layoutNotificationsTab = findViewById(R.id.layout_notifications_tab);
         layoutProfileTab = findViewById(R.id.layout_profile_tab);
+
+        // Bind Toolbar Notifications Bell Icon
+        ImageView ivNotifications = findViewById(R.id.iv_freelancer_notifications);
+        if (ivNotifications != null) {
+            ivNotifications.setOnClickListener(v -> {
+                if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_freelancer_notifications);
+            });
+        }
 
         // Bind Bottom Navigation
         bottomNav = findViewById(R.id.freelancer_bottom_navigation);
@@ -97,6 +113,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity
             } else if (id == R.id.nav_my_applications) {
                 switchTab(layoutApplicationsTab);
                 loadApplications();
+                return true;
+            } else if (id == R.id.nav_freelancer_notifications) {
+                switchTab(layoutNotificationsTab);
+                loadNotifications();
                 return true;
             } else if (id == R.id.nav_profile) {
                 switchTab(layoutProfileTab);
@@ -119,6 +139,13 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         recyclerApplications = findViewById(R.id.recycler_applications);
         recyclerApplications.setLayoutManager(new LinearLayoutManager(this));
         tvEmptyApplications = findViewById(R.id.tv_empty_applications);
+
+        // Initialize Notifications Tab
+        recyclerNotifications = findViewById(R.id.recycler_freelancer_notifications);
+        if (recyclerNotifications != null) {
+            recyclerNotifications.setLayoutManager(new LinearLayoutManager(this));
+        }
+        tvEmptyNotifications = findViewById(R.id.tv_empty_freelancer_notifications);
 
         // Initialize Profile Tab Views
         profileEmptyState = findViewById(R.id.profile_empty_state);
@@ -188,12 +215,14 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         // Refresh tabs in case they were returned to after applying to a job
         loadJobs("All");
         loadApplications();
+        loadNotifications();
         loadProfileTab();
     }
 
     private void switchTab(View activeTab) {
         layoutJobsTab.setVisibility(View.GONE);
         layoutApplicationsTab.setVisibility(View.GONE);
+        layoutNotificationsTab.setVisibility(View.GONE);
         layoutProfileTab.setVisibility(View.GONE);
         activeTab.setVisibility(View.VISIBLE);
         if (bottomNav != null) {
@@ -373,6 +402,98 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                 recyclerApplications.setVisibility(View.GONE);
                 Toast.makeText(this, "Failed to load applications", Toast.LENGTH_SHORT).show();
             });
+    }
+
+    // Notifications & Announcements Functions
+    private void loadNotifications() {
+        if (currentUid == null || recyclerNotifications == null) return;
+
+        List<EmployerNotificationAdapter.NotificationItem> items = new ArrayList<>();
+
+        // 1. Fetch personal notifications where recipientId == currentUid
+        db.collection("Notifications")
+            .whereEqualTo("recipientId", currentUid)
+            .get()
+            .addOnSuccessListener(notifSnap -> {
+                if (notifSnap != null) {
+                    for (DocumentSnapshot doc : notifSnap.getDocuments()) {
+                        Notification notif = doc.toObject(Notification.class);
+                        if (notif != null) {
+                            notif.setId(doc.getId());
+                            items.add(new EmployerNotificationAdapter.NotificationItem(notif));
+                            db.collection("Notifications").document(doc.getId()).update("read", true);
+                        }
+                    }
+                }
+
+                // 2. Fetch announcements relevant to Freelancer role
+                db.collection("Announcements").get()
+                    .addOnSuccessListener(annSnap -> {
+                        if (annSnap != null) {
+                            for (DocumentSnapshot doc : annSnap.getDocuments()) {
+                                String audience = doc.getString("targetAudience");
+                                if (isAudienceRelevant(audience)) {
+                                    long createdAtMs = 0;
+                                    com.google.firebase.Timestamp ts = doc.getTimestamp("createdAt");
+                                    if (ts != null) {
+                                        createdAtMs = ts.toDate().getTime();
+                                    } else {
+                                        Long l = doc.getLong("createdAt");
+                                        if (l != null) createdAtMs = l;
+                                    }
+
+                                    String date = doc.getString("date");
+                                    if (date == null || date.trim().isEmpty()) {
+                                        if (createdAtMs > 0) {
+                                            java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("MMM dd, yyyy", java.util.Locale.getDefault());
+                                            date = sdf.format(new java.util.Date(createdAtMs));
+                                        } else {
+                                            date = "General";
+                                        }
+                                    }
+
+                                    String priority = doc.getString("priority");
+                                    if (priority == null) priority = "Info";
+
+                                    Announcement ann = new Announcement(
+                                        doc.getId(),
+                                        doc.getString("title"),
+                                        doc.getString("message"),
+                                        audience != null ? audience : "All Users",
+                                        priority,
+                                        date
+                                    );
+                                    items.add(new EmployerNotificationAdapter.NotificationItem(ann, createdAtMs));
+                                }
+                            }
+                        }
+
+                        // Sort: newest first
+                        java.util.Collections.sort(items, (a, b) -> Long.compare(b.getTimestamp(), a.getTimestamp()));
+
+                        if (items.isEmpty()) {
+                            if (tvEmptyNotifications != null) tvEmptyNotifications.setVisibility(View.VISIBLE);
+                            recyclerNotifications.setVisibility(View.GONE);
+                        } else {
+                            if (tvEmptyNotifications != null) tvEmptyNotifications.setVisibility(View.GONE);
+                            recyclerNotifications.setVisibility(View.VISIBLE);
+                            notificationAdapter = new EmployerNotificationAdapter(items);
+                            recyclerNotifications.setAdapter(notificationAdapter);
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(this, "Failed to load announcements", Toast.LENGTH_SHORT).show();
+                    });
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load notifications", Toast.LENGTH_SHORT).show();
+            });
+    }
+
+    private boolean isAudienceRelevant(String audience) {
+        if (audience == null || audience.trim().isEmpty()) return true;
+        String a = audience.trim().toLowerCase();
+        return a.contains("all") || a.contains("everyone") || a.contains("public") || a.contains("freelancer");
     }
 
     // Profile Functions
