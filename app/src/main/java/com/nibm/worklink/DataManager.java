@@ -66,6 +66,13 @@ public class DataManager {
         return jobs;
     }
 
+    public static void setJobs(List<Job> newJobs) {
+        if (newJobs != null && !newJobs.isEmpty()) {
+            jobs.clear();
+            jobs.addAll(newJobs);
+        }
+    }
+
     public static List<Job> getJobsByCategory(String category) {
         if (category == null || category.equalsIgnoreCase("All")) {
             return jobs;

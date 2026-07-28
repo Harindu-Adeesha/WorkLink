@@ -18,10 +18,13 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.chip.Chip;
 import com.google.android.material.chip.ChipGroup;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +58,7 @@ public class FreelancerDashboardActivity extends AppCompatActivity
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
     private String currentUid;
+    private final List<String> availableCategories = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,27 +99,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         chipGroupCategories = findViewById(R.id.chip_group_categories);
         recyclerJobs = findViewById(R.id.recycler_jobs);
         recyclerJobs.setLayoutManager(new LinearLayoutManager(this));
-        jobAdapter = new JobAdapter(DataManager.getJobs());
+        jobAdapter = new JobAdapter(new ArrayList<>());
         recyclerJobs.setAdapter(jobAdapter);
 
-        chipGroupCategories.setOnCheckedStateChangeListener((group, checkedIds) -> {
-            if (checkedIds.isEmpty()) {
-                loadJobs("All");
-                return;
-            }
-            int checkedId = checkedIds.get(0);
-            String category = "All";
-            if (checkedId == R.id.chip_dev) {
-                category = "Software Development";
-            } else if (checkedId == R.id.chip_design) {
-                category = "UI/UX Design";
-            } else if (checkedId == R.id.chip_writing) {
-                category = "Content Writing";
-            } else if (checkedId == R.id.chip_marketing) {
-                category = "Digital Marketing";
-            }
-            loadJobs(category);
-        });
+        setupCategoryChips();
 
         // Initialize Applications Tab
         recyclerApplications = findViewById(R.id.recycler_applications);
@@ -138,6 +125,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         etProfileRate = findViewById(R.id.et_profile_rate);
         etProfileBio = findViewById(R.id.et_profile_bio);
         etProfileSkills = findViewById(R.id.et_profile_skills);
+
+        // Pre-fetch categories from Firestore backend
+        fetchCategoriesFromBackend();
+        setupSkillsFieldForFreelancer();
 
         Button btnCreateProfileEmpty = findViewById(R.id.btn_create_profile_empty);
         Button btnEditProfile = findViewById(R.id.btn_edit_profile);
@@ -183,8 +174,62 @@ public class FreelancerDashboardActivity extends AppCompatActivity
 
     // Job Feed Functions
     private void loadJobs(String category) {
-        List<Job> jobsList = DataManager.getJobsByCategory(category);
-        jobAdapter.updateJobs(jobsList);
+        db.collection("Jobs").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<Job> fetchedJobs = new ArrayList<>();
+            if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                    Job job = doc.toObject(Job.class);
+                    if (job != null) {
+                        String id = doc.getId();
+                        Job fullJob = new Job(
+                                id,
+                                job.getTitle(),
+                                job.getCompany(),
+                                job.getDescription(),
+                                job.getSalary(),
+                                job.getCategory(),
+                                job.getEmployerDescription(),
+                                job.getEmployerRating(),
+                                job.getEmployerContact(),
+                                job.getDeadline(),
+                                job.getStatus(),
+                                job.isVerified()
+                        );
+                        fetchedJobs.add(fullJob);
+                    }
+                }
+            }
+
+            if (!fetchedJobs.isEmpty()) {
+                DataManager.setJobs(fetchedJobs);
+            } else {
+                fetchedJobs = DataManager.getJobs();
+            }
+
+            List<Job> filteredJobs = new ArrayList<>();
+            for (Job job : fetchedJobs) {
+                if (category == null || category.equalsIgnoreCase("All")) {
+                    filteredJobs.add(job);
+                } else if (job.getCategory() != null && job.getCategory().equalsIgnoreCase(category.trim())) {
+                    filteredJobs.add(job);
+                }
+            }
+
+            if (jobAdapter == null) {
+                jobAdapter = new JobAdapter(filteredJobs);
+                recyclerJobs.setAdapter(jobAdapter);
+            } else {
+                jobAdapter.updateJobs(filteredJobs);
+            }
+        }).addOnFailureListener(e -> {
+            List<Job> jobsList = DataManager.getJobsByCategory(category);
+            if (jobAdapter == null) {
+                jobAdapter = new JobAdapter(jobsList);
+                recyclerJobs.setAdapter(jobAdapter);
+            } else {
+                jobAdapter.updateJobs(jobsList);
+            }
+        });
     }
 
     // Applications Functions
@@ -240,6 +285,114 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                 profileEmptyState.setVisibility(View.VISIBLE);
                 profileViewState.setVisibility(View.GONE);
             });
+    }
+
+    private void setupSkillsFieldForFreelancer() {
+        if (etProfileSkills != null) {
+            etProfileSkills.setFocusable(false);
+            etProfileSkills.setClickable(true);
+            etProfileSkills.setOnClickListener(v -> showCategorySelectionDialog());
+        }
+    }
+
+    private void fetchCategoriesFromBackend() {
+        db.collection("Categories").get().addOnSuccessListener(snapshots -> {
+            availableCategories.clear();
+            if (snapshots != null) {
+                for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                    String name = doc.getString("name");
+                    if (name != null && !name.trim().isEmpty()) {
+                        availableCategories.add(name);
+                    }
+                }
+            }
+            if (availableCategories.isEmpty()) {
+                availableCategories.add("Software Development");
+                availableCategories.add("UI/UX Design");
+                availableCategories.add("Content Writing");
+                availableCategories.add("Digital Marketing");
+            }
+            setupCategoryChips();
+        });
+    }
+
+    private void setupCategoryChips() {
+        if (chipGroupCategories == null) return;
+        chipGroupCategories.removeAllViews();
+
+        Chip chipAll = new Chip(this);
+        chipAll.setId(View.generateViewId());
+        chipAll.setText("All");
+        chipAll.setCheckable(true);
+        chipAll.setClickable(true);
+        chipAll.setFocusable(true);
+        chipAll.setChecked(true);
+        chipGroupCategories.addView(chipAll);
+
+        for (String cat : availableCategories) {
+            if ("All".equalsIgnoreCase(cat)) continue;
+            Chip chip = new Chip(this);
+            chip.setId(View.generateViewId());
+            chip.setText(cat);
+            chip.setCheckable(true);
+            chip.setClickable(true);
+            chip.setFocusable(true);
+            chipGroupCategories.addView(chip);
+        }
+
+        chipGroupCategories.setOnCheckedStateChangeListener((group, checkedIds) -> {
+            if (checkedIds == null || checkedIds.isEmpty()) {
+                loadJobs("All");
+                return;
+            }
+            int checkedId = checkedIds.get(0);
+            Chip selectedChip = group.findViewById(checkedId);
+            if (selectedChip != null) {
+                loadJobs(selectedChip.getText().toString());
+            } else {
+                loadJobs("All");
+            }
+        });
+    }
+
+    private void showCategorySelectionDialog() {
+        if (availableCategories.isEmpty()) {
+            fetchCategoriesFromBackend();
+        }
+        String[] items = availableCategories.toArray(new String[0]);
+        boolean[] checkedItems = new boolean[items.length];
+
+        String currentText = etProfileSkills.getText().toString();
+        if (!currentText.isEmpty()) {
+            String[] selected = currentText.split(",\\s*");
+            for (int i = 0; i < items.length; i++) {
+                for (String s : selected) {
+                    if (items[i].equalsIgnoreCase(s.trim())) {
+                        checkedItems[i] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        new AlertDialog.Builder(this)
+                .setTitle("Select Categories / Area of Expertise")
+                .setMultiChoiceItems(items, checkedItems, (dialog, which, isChecked) -> {
+                    checkedItems[which] = isChecked;
+                })
+                .setPositiveButton("Select", (dialog, which) -> {
+                    StringBuilder sb = new StringBuilder();
+                    for (int i = 0; i < items.length; i++) {
+                        if (checkedItems[i]) {
+                            if (sb.length() > 0) sb.append(", ");
+                            sb.append(items[i]);
+                        }
+                    }
+                    etProfileSkills.setText(sb.toString());
+                    etProfileSkills.setError(null);
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     private void enterProfileEditMode(boolean isNew) {

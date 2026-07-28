@@ -31,13 +31,36 @@ public class JobDetailsActivity extends AppCompatActivity {
         }
 
         currentJob = DataManager.getJobById(jobId);
-        if (currentJob == null) {
-            Toast.makeText(this, "Job detail empty", Toast.LENGTH_SHORT).show();
-            finish();
-            return;
+        if (currentJob != null) {
+            displayJobDetails();
+        } else {
+            com.google.firebase.firestore.FirebaseFirestore.getInstance().collection("Jobs").document(jobId).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        Job job = doc.toObject(Job.class);
+                        if (job != null) {
+                            currentJob = new Job(
+                                doc.getId(), job.getTitle(), job.getCompany(), job.getDescription(),
+                                job.getSalary(), job.getCategory(), job.getEmployerDescription(),
+                                job.getEmployerRating(), job.getEmployerContact(), job.getDeadline(),
+                                job.getStatus(), job.isVerified()
+                            );
+                            displayJobDetails();
+                            return;
+                        }
+                    }
+                    Toast.makeText(this, "Job detail empty", Toast.LENGTH_SHORT).show();
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Failed to load job details", Toast.LENGTH_SHORT).show();
+                    finish();
+                });
         }
+    }
 
-        // Bind Job Views
+    private void displayJobDetails() {
+        if (currentJob == null) return;
         TextView tvTitle = findViewById(R.id.tv_detail_title);
         TextView tvCategory = findViewById(R.id.tv_detail_category);
         TextView tvSalary = findViewById(R.id.tv_detail_salary);
