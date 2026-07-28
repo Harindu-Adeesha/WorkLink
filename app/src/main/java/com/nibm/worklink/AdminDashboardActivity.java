@@ -2,16 +2,37 @@ package com.nibm.worklink;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.ImageView;
+import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
+import com.google.android.material.card.MaterialCardView;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 public class AdminDashboardActivity extends AppCompatActivity {
+
+    private FirebaseFirestore db;
+    private ListenerRegistration categoryListener;
+    private TextView tvCategoryCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
+
+        db = FirebaseFirestore.getInstance();
+        tvCategoryCount = findViewById(R.id.tv_category_count);
+
+        MaterialCardView cardCategories = findViewById(R.id.card_categories);
+        if (cardCategories != null) {
+            cardCategories.setOnClickListener(v -> {
+                Intent intent = new Intent(AdminDashboardActivity.this, CategoryManagementActivity.class);
+                startActivity(intent);
+            });
+        }
 
         BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_dashboard);
@@ -33,9 +54,29 @@ public class AdminDashboardActivity extends AppCompatActivity {
             return false;
         });
         
-        android.widget.ImageView ivProfile = findViewById(R.id.iv_profile);
+        ImageView ivProfile = findViewById(R.id.iv_profile);
         if (ivProfile != null) {
             ivProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         }
+
+        loadCategoryCount();
+    }
+
+    private void loadCategoryCount() {
+        categoryListener = db.collection("Categories")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error == null && snapshots != null && tvCategoryCount != null) {
+                        tvCategoryCount.setText(String.valueOf(snapshots.size()));
+                    }
+                });
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (categoryListener != null) {
+            categoryListener.remove();
+        }
     }
 }
+

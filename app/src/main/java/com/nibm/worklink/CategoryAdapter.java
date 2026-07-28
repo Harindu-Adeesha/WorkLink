@@ -6,7 +6,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -16,14 +15,14 @@ import java.util.List;
 public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHolder> {
 
     public interface OnCategoryActionListener {
-        void onEditCategory(String name, int position);
-        void onDeleteCategory(int position);
+        void onEditCategory(Category category, int position);
+        void onDeleteCategory(Category category, int position);
     }
 
-    private final List<String> categories;
+    private final List<Category> categories;
     private final OnCategoryActionListener listener;
 
-    public CategoryAdapter(List<String> categories, OnCategoryActionListener listener) {
+    public CategoryAdapter(List<Category> categories, OnCategoryActionListener listener) {
         this.categories = categories;
         this.listener = listener;
     }
@@ -37,25 +36,25 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        String category = categories.get(position);
-        holder.tvName.setText(category);
+        Category category = categories.get(position);
+        holder.tvName.setText(category.getName());
 
         holder.btnEdit.setOnClickListener(v -> {
             int currentPos = holder.getAdapterPosition();
-            if (currentPos != RecyclerView.NO_ID) {
+            if (currentPos != RecyclerView.NO_POSITION) {
                 listener.onEditCategory(categories.get(currentPos), currentPos);
             }
         });
 
         holder.btnDelete.setOnClickListener(v -> {
             int currentPos = holder.getAdapterPosition();
-            if (currentPos != RecyclerView.NO_ID) {
+            if (currentPos != RecyclerView.NO_POSITION) {
+                Category catToDelete = categories.get(currentPos);
                 new AlertDialog.Builder(v.getContext())
                         .setTitle("Delete Category")
-                        .setMessage("Are you sure you want to delete '" + categories.get(currentPos) + "'?")
+                        .setMessage("Are you sure you want to delete '" + catToDelete.getName() + "'?")
                         .setPositiveButton("Delete", (d, w) -> {
-                            listener.onDeleteCategory(currentPos);
-                            Toast.makeText(v.getContext(), "Deleted", Toast.LENGTH_SHORT).show();
+                            listener.onDeleteCategory(catToDelete, currentPos);
                         })
                         .setNegativeButton("Cancel", null)
                         .show();
@@ -80,3 +79,4 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         }
     }
 }
+

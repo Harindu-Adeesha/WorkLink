@@ -3,22 +3,23 @@ package com.nibm.worklink;
 import android.app.AlertDialog;
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.ListenerRegistration;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,20 +29,18 @@ public class CategoryManagementActivity extends AppCompatActivity
 
     private RecyclerView recyclerView;
     private CategoryAdapter adapter;
-    private List<String> categoryList;
+    private List<Category> categoryList;
     private BottomNavigationView bottomNavigationView;
+    private FirebaseFirestore db;
+    private ListenerRegistration categoryListener;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_category_management);
 
+        db = FirebaseFirestore.getInstance();
         categoryList = new ArrayList<>();
-        categoryList.add("Electronics");
-        categoryList.add("Home Decor");
-        categoryList.add("Apparel");
-        categoryList.add("Sports");
-        categoryList.add("Toys");
 
         recyclerView = findViewById(R.id.recycler_categories);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -71,13 +70,43 @@ public class CategoryManagementActivity extends AppCompatActivity
             return false;
         });
 
-        android.widget.ImageView ivProfile = findViewById(R.id.iv_profile);
+        ImageView ivProfile = findViewById(R.id.iv_profile);
         if (ivProfile != null) {
             ivProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         }
+
+        listenToCategoryUpdates();
     }
 
-    private void showCategoryDialog(String existingName, int position) {
+    private void listenToCategoryUpdates() {
+        categoryListener = db.collection("Categories")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error != null) {
+                        Toast.makeText(this, "Error loading categories: " + error.getMessage(), Toast.LENGTH_LONG).show();
+                        return;
+                    }
+
+                    if (snapshots != null) {
+                        categoryList.clear();
+                        for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                            String docId = doc.getId();
+                            String name = doc.getString("name");
+                            if (name == null || name.trim().isEmpty()) {
+                                Category cat = doc.toObject(Category.class);
+                                if (cat != null && cat.getName() != null) {
+                                    name = cat.getName();
+                                }
+                            }
+                            if (name != null && !name.trim().isEmpty()) {
+                                categoryList.add(new Category(docId, name));
+                            }
+                        }
+                        adapter.notifyDataSetChanged();
+                    }
+                });
+    }
+
+    private void showCategoryDialog(Category existingCategory, int position) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         View view = getLayoutInflater().inflate(R.layout.dialog_category, null);
         builder.setView(view);
@@ -87,9 +116,11 @@ public class CategoryManagementActivity extends AppCompatActivity
         Button btnCancel = view.findViewById(R.id.btn_cancel);
         Button btnSave = view.findViewById(R.id.btn_save);
 
-        if (existingName != null) {
+        if (existingCategory != null) {
             dialogTitle.setText("Edit Category");
-            etCategoryName.setText(existingName);
+            etCategoryName.setText(existingCategory.getName());
+        } else {
+            dialogTitle.setText("Add Category");
         }
 
         AlertDialog dialog = builder.create();
@@ -104,14 +135,23 @@ public class CategoryManagementActivity extends AppCompatActivity
                 etCategoryName.setError("Required");
                 return;
             }
-            if (position == -1) {
-                categoryList.add(name);
-                adapter.notifyItemInserted(categoryList.size() - 1);
-                Toast.makeText(this, "Category added", Toast.LENGTH_SHORT).show();
+            if (existingCategory == null) {
+                // CREATE operation in backend
+                DocumentReference docRef = db.collection("Categories").document();
+                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                data.put("id", docRef.getId());
+                data.put("name", name);
+                docRef.set(data)
+                        .addOnSuccessListener(aVoid -> Toast.makeText(this, "Category added", Toast.LENGTH_SHORT).show())
+                        .addOnFailureListener(e -> Toast.makeText(this, "Error saving: " + e.getMessage(), Toast.LENGTH_LONG).show());
             } else {
-                categoryList.set(position, name);
-                adapter.notifyItemChanged(position);
-                Toast.makeText(this, "Category updated", Toast.LENGTH_SHORT).show();
+                // UPDATE operation in backend
+                java.util.Map<String, Object> data = new java.util.HashMap<>();
+                data.put("name", name);
+                db.collection("Categories").document(existingCategory.getId())
+                        .update(data)
+                        .addOnSuccessListener(aVoid -> Toast.makeText(this, "Category updated", Toast.LENGTH_SHORT).show())
+                        .addOnFailureListener(e -> Toast.makeText(this, "Error updating: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
             dialog.dismiss();
         });
@@ -123,15 +163,28 @@ public class CategoryManagementActivity extends AppCompatActivity
     // --- CategoryAdapter.OnCategoryActionListener callbacks ---
 
     @Override
-    public void onEditCategory(String name, int position) {
-        showCategoryDialog(name, position);
+    public void onEditCategory(Category category, int position) {
+        showCategoryDialog(category, position);
     }
 
     @Override
-    public void onDeleteCategory(int position) {
-        categoryList.remove(position);
-        adapter.notifyItemRemoved(position);
-        adapter.notifyItemRangeChanged(position, categoryList.size());
+    public void onDeleteCategory(Category category, int position) {
+        // DELETE operation in backend
+        if (category != null && category.getId() != null) {
+            db.collection("Categories").document(category.getId())
+                    .delete()
+                    .addOnSuccessListener(aVoid -> Toast.makeText(this, "Category deleted", Toast.LENGTH_SHORT).show())
+                    .addOnFailureListener(e -> Toast.makeText(this, "Error deleting category: " + e.getMessage(), Toast.LENGTH_LONG).show());
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        if (categoryListener != null) {
+            categoryListener.remove();
+        }
     }
 }
+
 

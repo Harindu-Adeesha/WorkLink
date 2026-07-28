@@ -90,9 +90,12 @@
 
             <!-- Metric Cards -->
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_categories"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
@@ -114,10 +117,11 @@
                         android:textColor="#6C757D"/>
                         
                     <TextView
+                        android:id="@+id/tv_category_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/cat_title"
-                        android:text="124"
+                        android:text="0"
                         android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="#14213d"
