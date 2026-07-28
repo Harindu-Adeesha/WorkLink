@@ -96,7 +96,7 @@ public class NotificationsActivity extends AppCompatActivity {
                 .addOnSuccessListener(doc -> {
                     if (doc.exists()) {
                         userRole = doc.getString("role");
-                        TextView tvRole = findViewById(R.id.tv_notifications_role);
+                        TextView tvRole = findViewById(R.id.tv_notifications_role_badge);
                         if (tvRole != null && userRole != null) {
                             tvRole.setText(userRole);
                         }
