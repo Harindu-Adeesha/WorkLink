@@ -57,16 +57,18 @@
             android:textSize="14sp"
             android:textStyle="bold"/>
 
-        <TextView
-            android:id="@+id/tv_employer_app_resume"
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_download_cv"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:text="Resume: my_resume.pdf"
+            android:layout_height="36dp"
+            android:layout_marginTop="8dp"
+            android:text="⬇ Download CV"
             android:textSize="13sp"
-            android:textColor="#6C757D"
-            android:drawableStart="@android:drawable/ic_menu_sort_by_size"
-            android:drawablePadding="6dp"/>
+            android:textColor="#035DD6"
+            app:strokeColor="#035DD6"
+            app:cornerRadius="6dp"
+            android:visibility="gone"/>
 
         <TextView
             android:layout_width="wrap_content"
