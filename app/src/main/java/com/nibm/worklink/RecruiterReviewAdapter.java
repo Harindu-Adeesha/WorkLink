@@ -12,7 +12,12 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReviewAdapter.ViewHolder> {
 
@@ -33,14 +38,75 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Review review = reviewList.get(position);
 
-        // Resolve job title and company from the job ID
-        Job job = DataManager.getJobById(review.getJobId());
-        if (job != null) {
-            holder.tvJobTitle.setText(job.getTitle());
-            holder.tvJobCompany.setText(job.getCompany());
+        // 1. Resolve Job Title and Company
+        String jobTitle = review.getJobTitle();
+        String company = review.getCompany();
+
+        if (jobTitle != null && !jobTitle.trim().isEmpty()) {
+            holder.tvJobTitle.setText(jobTitle);
         } else {
-            holder.tvJobTitle.setText("Job ID: " + review.getJobId());
-            holder.tvJobCompany.setText("Unknown Company");
+            Job job = DataManager.getJobById(review.getJobId());
+            if (job != null && job.getTitle() != null) {
+                holder.tvJobTitle.setText(job.getTitle());
+            } else {
+                holder.tvJobTitle.setText("Loading Job details...");
+            }
+        }
+
+        if (company != null && !company.trim().isEmpty()) {
+            holder.tvJobCompany.setText(company);
+        } else {
+            Job job = DataManager.getJobById(review.getJobId());
+            if (job != null && job.getCompany() != null) {
+                holder.tvJobCompany.setText(job.getCompany());
+            } else {
+                holder.tvJobCompany.setText("WorkLink");
+            }
+        }
+
+        // Async fetch job if title/company missing
+        if ((jobTitle == null || jobTitle.trim().isEmpty() || company == null || company.trim().isEmpty())
+                && review.getJobId() != null && !review.getJobId().isEmpty()) {
+            FirebaseFirestore.getInstance().collection("Jobs").document(review.getJobId()).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String fetchedTitle = doc.getString("title");
+                        String fetchedCompany = doc.getString("company");
+                        if (fetchedTitle != null) holder.tvJobTitle.setText(fetchedTitle);
+                        if (fetchedCompany != null) holder.tvJobCompany.setText(fetchedCompany);
+                    } else if (jobTitle == null) {
+                        holder.tvJobTitle.setText("Job Review");
+                    }
+                });
+        }
+
+        // 2. Resolve Reviewer Info
+        String reviewerUid = review.getReviewerUid();
+        if (reviewerUid != null && !reviewerUid.trim().isEmpty()) {
+            holder.tvReviewerName.setText("By: Loading...");
+            FirebaseFirestore.getInstance().collection("Users").document(reviewerUid).get()
+                .addOnSuccessListener(doc -> {
+                    if (doc.exists()) {
+                        String name = doc.getString("name");
+                        String role = doc.getString("role");
+                        if (name == null || name.isEmpty()) name = "User";
+                        String reviewerStr = "By: " + name + (role != null && !role.isEmpty() ? " (" + role + ")" : "");
+                        holder.tvReviewerName.setText(reviewerStr);
+                    } else {
+                        holder.tvReviewerName.setText("By: Unknown User");
+                    }
+                })
+                .addOnFailureListener(e -> holder.tvReviewerName.setText("By: Anonymous"));
+        } else {
+            holder.tvReviewerName.setText("By: Anonymous");
+        }
+
+        // 3. Date Formatting
+        if (review.getCreatedAt() > 0) {
+            SimpleDateFormat sdf = new SimpleDateFormat("MMM dd, yyyy • hh:mm a", Locale.getDefault());
+            holder.tvReviewDate.setText(sdf.format(new Date(review.getCreatedAt())));
+        } else {
+            holder.tvReviewDate.setText("");
         }
 
         holder.tvText.setText(review.getReviewText());
@@ -48,14 +114,14 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
 
         holder.btnDelete.setOnClickListener(v -> {
             int pos = holder.getAdapterPosition();
-            if (pos == RecyclerView.NO_ID) return;
+            if (pos == RecyclerView.NO_POSITION) return;
             Review toDelete = reviewList.get(pos);
             new AlertDialog.Builder(v.getContext())
                 .setTitle("Delete Review")
                 .setMessage("Are you sure you want to permanently delete this review?")
                 .setPositiveButton("Delete", (dialog, which) -> {
                     // Remove from Firestore
-                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                    FirebaseFirestore.getInstance()
                         .collection("Reviews")
                         .document(toDelete.getId())
                         .delete()
@@ -80,7 +146,7 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvJobTitle, tvJobCompany, tvText;
+        TextView tvJobTitle, tvJobCompany, tvReviewerName, tvReviewDate, tvText;
         RatingBar ratingBar;
         Button btnDelete;
 
@@ -88,6 +154,8 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
             super(itemView);
             tvJobTitle = itemView.findViewById(R.id.tv_review_job_title);
             tvJobCompany = itemView.findViewById(R.id.tv_review_job_company);
+            tvReviewerName = itemView.findViewById(R.id.tv_reviewer_name);
+            tvReviewDate = itemView.findViewById(R.id.tv_review_date);
             tvText = itemView.findViewById(R.id.tv_review_text);
             ratingBar = itemView.findViewById(R.id.rb_review_rating);
             btnDelete = itemView.findViewById(R.id.btn_delete_review);
