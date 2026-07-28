@@ -1,11 +1,14 @@
 package com.nibm.worklink;
 
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ArrayAdapter;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RatingBar;
@@ -19,11 +22,15 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.DocumentReference;
+import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class EmployerDashboardActivity extends AppCompatActivity
@@ -179,22 +186,28 @@ public class EmployerDashboardActivity extends AppCompatActivity
     // Load Jobs Posted by This Employer
     private void loadEmployerJobs() {
         String email = getEmployerEmail();
-        List<Job> allJobs = DataManager.getJobs();
-        List<Job> myJobs = new ArrayList<>();
-        for (Job job : allJobs) {
-            if (job.getEmployerContact().equalsIgnoreCase(email)) {
-                myJobs.add(job);
-            }
-        }
+        db.collection("Jobs").whereEqualTo("employerContact", email).get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                List<Job> myJobs = new ArrayList<>();
+                for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    Job job = doc.toObject(Job.class);
+                    if (job != null) {
+                        myJobs.add(job);
+                    }
+                }
 
-        if (myJobs.isEmpty()) {
-            tvEmptyJobs.setVisibility(View.VISIBLE);
-            recyclerJobs.setVisibility(View.GONE);
-        } else {
-            tvEmptyJobs.setVisibility(View.GONE);
-            recyclerJobs.setVisibility(View.VISIBLE);
-            jobAdapter.updateJobs(myJobs);
-        }
+                if (myJobs.isEmpty()) {
+                    tvEmptyJobs.setVisibility(View.VISIBLE);
+                    recyclerJobs.setVisibility(View.GONE);
+                } else {
+                    tvEmptyJobs.setVisibility(View.GONE);
+                    recyclerJobs.setVisibility(View.VISIBLE);
+                    jobAdapter.updateJobs(myJobs);
+                }
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load jobs", Toast.LENGTH_SHORT).show();
+            });
     }
 
     // Load Applications Submitted to This Employer's Jobs
@@ -355,11 +368,39 @@ public class EmployerDashboardActivity extends AppCompatActivity
         TextView tvTitle = dialogView.findViewById(R.id.dialog_job_title);
         EditText etTitle = dialogView.findViewById(R.id.et_dialog_job_title);
         EditText etSalary = dialogView.findViewById(R.id.et_dialog_job_salary);
-        EditText etCategory = dialogView.findViewById(R.id.et_dialog_job_category);
+        AutoCompleteTextView etCategory = dialogView.findViewById(R.id.et_dialog_job_category);
         EditText etDeadline = dialogView.findViewById(R.id.et_dialog_job_deadline);
         EditText etDesc = dialogView.findViewById(R.id.et_dialog_job_desc);
         Button btnSave = dialogView.findViewById(R.id.btn_dialog_job_save);
         Button btnCancel = dialogView.findViewById(R.id.btn_dialog_job_cancel);
+
+        // Fetch categories from DB
+        db.collection("Categories").get().addOnSuccessListener(queryDocumentSnapshots -> {
+            List<String> categories = new ArrayList<>();
+            for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                String name = doc.getString("name");
+                if (name != null) categories.add(name);
+            }
+            ArrayAdapter<String> adapter = new ArrayAdapter<>(this, android.R.layout.simple_dropdown_item_1line, categories);
+            etCategory.setAdapter(adapter);
+        });
+
+        // Date Picker for Deadline
+        etDeadline.setOnClickListener(v -> {
+            Calendar calendar = Calendar.getInstance();
+            int year = calendar.get(Calendar.YEAR);
+            int month = calendar.get(Calendar.MONTH);
+            int day = calendar.get(Calendar.DAY_OF_MONTH);
+            DatePickerDialog datePickerDialog = new DatePickerDialog(
+                    this,
+                    (view, selectedYear, selectedMonth, selectedDay) -> {
+                        String formattedDate = String.format(Locale.getDefault(), "%04d-%02d-%02d", selectedYear, selectedMonth + 1, selectedDay);
+                        etDeadline.setText(formattedDate);
+                    },
+                    year, month, day
+            );
+            datePickerDialog.show();
+        });
 
         boolean isEdit = existingJob != null;
         tvTitle.setText(isEdit ? "Update Job Details" : "Post New Job");
@@ -408,18 +449,25 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     Job updated = new Job(
                             existingJob.getId(), title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    db.collection("Jobs").document(existingJob.getId()).set(updated)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
+                            loadEmployerJobs();
+                        });
                     DataManager.updateJob(updated);
-                    Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
                 } else {
-                    String newId = String.valueOf(DataManager.getJobs().size() + 1);
+                    DocumentReference ref = db.collection("Jobs").document();
+                    String newId = ref.getId();
                     Job newJob = new Job(
                             newId, title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    ref.set(newJob).addOnSuccessListener(aVoid -> {
+                        Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
+                        loadEmployerJobs();
+                    });
                     DataManager.addJob(newJob);
-                    Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
                 }
 
-                loadEmployerJobs();
                 dialog.dismiss();
             }).addOnFailureListener(e -> {
                 btnSave.setEnabled(true);
@@ -486,8 +534,11 @@ public class EmployerDashboardActivity extends AppCompatActivity
 
     @Override
     public void onDeleteJob(String jobId) {
+        db.collection("Jobs").document(jobId).delete()
+            .addOnSuccessListener(aVoid -> {
+                loadEmployerJobs();
+            });
         DataManager.deleteJob(jobId);
-        loadEmployerJobs();
         loadEmployerApplications();
     }
 

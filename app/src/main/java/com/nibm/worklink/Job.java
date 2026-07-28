@@ -12,6 +12,8 @@ public class Job {
     private String employerContact;
     private String deadline;
 
+    public Job() {}
+
     public Job(String id, String title, String company, String description, String salary, String category,
                String employerDescription, float employerRating, String employerContact, String deadline) {
         this.id = id;
