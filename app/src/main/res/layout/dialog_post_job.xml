@@ -56,14 +56,14 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            style="@style/Widget.App.TextInputLayout">
-            <com.google.android.material.textfield.TextInputEditText
+            style="@style/Widget.App.TextInputLayout.ExposedDropdownMenu">
+            <AutoCompleteTextView
                 android:id="@+id/et_dialog_job_category"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="Category (e.g. Software Development)"
                 android:textColor="#000000"
-                android:inputType="text"/>
+                android:inputType="none"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Deadline -->
@@ -78,7 +78,9 @@
                 android:layout_height="wrap_content"
                 android:hint="Deadline (e.g. 2026-08-30)"
                 android:textColor="#000000"
-                android:inputType="text"/>
+                android:inputType="none"
+                android:focusable="false"
+                android:clickable="true"/>
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Description -->
