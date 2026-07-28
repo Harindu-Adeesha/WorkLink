@@ -47,14 +47,27 @@ public class RecruiterReviewAdapter extends RecyclerView.Adapter<RecruiterReview
         holder.ratingBar.setRating(review.getRating());
 
         holder.btnDelete.setOnClickListener(v -> {
+            int pos = holder.getAdapterPosition();
+            if (pos == RecyclerView.NO_ID) return;
+            Review toDelete = reviewList.get(pos);
             new AlertDialog.Builder(v.getContext())
                 .setTitle("Delete Review")
                 .setMessage("Are you sure you want to permanently delete this review?")
                 .setPositiveButton("Delete", (dialog, which) -> {
-                    reviewList.remove(position);
-                    notifyItemRemoved(position);
-                    notifyItemRangeChanged(position, reviewList.size());
-                    Toast.makeText(v.getContext(), "Review deleted", Toast.LENGTH_SHORT).show();
+                    // Remove from Firestore
+                    com.google.firebase.firestore.FirebaseFirestore.getInstance()
+                        .collection("Reviews")
+                        .document(toDelete.getId())
+                        .delete()
+                        .addOnSuccessListener(aVoid -> {
+                            reviewList.remove(pos);
+                            notifyItemRemoved(pos);
+                            notifyItemRangeChanged(pos, reviewList.size());
+                            Toast.makeText(v.getContext(), "Review deleted", Toast.LENGTH_SHORT).show();
+                        })
+                        .addOnFailureListener(e ->
+                            Toast.makeText(v.getContext(), "Failed to delete review", Toast.LENGTH_SHORT).show()
+                        );
                 })
                 .setNegativeButton("Cancel", null)
                 .show();

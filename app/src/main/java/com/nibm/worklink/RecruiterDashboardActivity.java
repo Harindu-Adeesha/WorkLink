@@ -367,10 +367,28 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     }
 
     private void loadReviews() {
-        List<Review> reviews = DataManager.getReviews();
         RecyclerView recyclerReviews = findViewById(R.id.recycler_recruiter_reviews);
         recyclerReviews.setLayoutManager(new LinearLayoutManager(this));
-        RecruiterReviewAdapter reviewAdapter = new RecruiterReviewAdapter(new ArrayList<>(reviews));
-        recyclerReviews.setAdapter(reviewAdapter);
+
+        FirebaseFirestore.getInstance().collection("Reviews")
+            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                List<Review> reviews = new ArrayList<>();
+                if (queryDocumentSnapshots != null) {
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        Review r = doc.toObject(Review.class);
+                        if (r != null) {
+                            if (r.getId() == null) r.setId(doc.getId());
+                            reviews.add(r);
+                        }
+                    }
+                }
+                RecruiterReviewAdapter reviewAdapter = new RecruiterReviewAdapter(reviews);
+                recyclerReviews.setAdapter(reviewAdapter);
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load reviews", Toast.LENGTH_SHORT).show();
+            });
     }
 }

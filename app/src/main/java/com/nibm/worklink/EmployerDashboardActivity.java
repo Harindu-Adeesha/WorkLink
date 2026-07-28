@@ -15,6 +15,7 @@ import android.widget.RatingBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -156,6 +157,20 @@ public class EmployerDashboardActivity extends AppCompatActivity
             finish();
         });
 
+        // Handle system back button tab navigation
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (layoutApplicationsTab.getVisibility() == View.VISIBLE || layoutProfileTab.getVisibility() == View.VISIBLE) {
+                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_employer_jobs);
+                    switchTab(layoutJobsTab);
+                    loadEmployerJobs();
+                } else {
+                    finish();
+                }
+            }
+        });
+
         // Initialize Feed
         loadEmployerJobs();
     }
@@ -204,6 +219,11 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     recyclerJobs.setVisibility(View.VISIBLE);
                     jobAdapter.updateJobs(myJobs);
                 }
+
+                // Fetch real review-based ratings and push to adapter
+                RatingRepository.fetchJobRatings(ratingsMap -> {
+                    if (jobAdapter != null) jobAdapter.updateRatings(ratingsMap);
+                });
             })
             .addOnFailureListener(e -> {
                 Toast.makeText(this, "Failed to load jobs", Toast.LENGTH_SHORT).show();
@@ -498,14 +518,35 @@ public class EmployerDashboardActivity extends AppCompatActivity
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         btnSubmit.setOnClickListener(v -> {
             float rating = ratingBar.getRating();
-            String review = etReviewText.getText().toString().trim();
-            if (review.isEmpty()) {
+            String reviewText = etReviewText.getText().toString().trim();
+            if (reviewText.isEmpty()) {
                 etReviewText.setError("Required");
                 return;
             }
 
-            Toast.makeText(this, "App Review Submitted. Rating: " + rating + "★. Thank you!", Toast.LENGTH_LONG).show();
-            dialog.dismiss();
+            btnSubmit.setEnabled(false);
+            btnSubmit.setText("Submitting…");
+
+            String reviewerUid = currentUid != null ? currentUid : "";
+            String reviewId = String.valueOf(System.currentTimeMillis());
+
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", reviewId);
+            map.put("reviewerUid", reviewerUid);
+            map.put("rating", rating);
+            map.put("reviewText", reviewText);
+            map.put("createdAt", System.currentTimeMillis());
+
+            db.collection("AppReviews").document(reviewId).set(map)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "App Review Submitted. Rating: " + rating + "★. Thank you!", Toast.LENGTH_LONG).show();
+                    dialog.dismiss();
+                })
+                .addOnFailureListener(e -> {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
+                    Toast.makeText(this, "Failed to submit review: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
         });
 
         dialog.show();

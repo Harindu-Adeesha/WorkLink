@@ -20,7 +20,7 @@ public class ProfileActivity extends AppCompatActivity {
         setContentView(R.layout.activity_profile);
 
         Toolbar toolbar = findViewById(R.id.toolbar);
-        toolbar.setNavigationOnClickListener(v -> onBackPressed());
+        toolbar.setNavigationOnClickListener(v -> finish());
 
         TextView tvName  = findViewById(R.id.tv_profile_name);
         TextView tvEmail = findViewById(R.id.tv_profile_email);
