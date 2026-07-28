@@ -299,11 +299,16 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                             );
                         }
 
+                        String applicantName = doc.getString("applicantName");
+                        String applicantEmail = doc.getString("applicantEmail");
+                        
                         Application app = new Application(
                             id != null ? id : doc.getId(),
                             job, coverLetter != null ? coverLetter : "",
                             resumeUrl != null ? resumeUrl : "",
-                            status
+                            status,
+                            applicantName,
+                            applicantEmail
                         );
                         appsList.add(app);
                     }

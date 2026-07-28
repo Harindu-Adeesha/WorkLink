@@ -65,12 +65,9 @@ public class EmployerApplicationAdapter extends RecyclerView.Adapter<EmployerApp
         holder.tvStatus.setText(app.getStatus());
 
         // Set dynamic applicant info
-        Profile fp = DataManager.getProfile();
-        if (fp != null) {
-            holder.tvApplicant.setText("Applicant: " + fp.getName() + " (" + fp.getEmail() + ")");
-        } else {
-            holder.tvApplicant.setText("Applicant: Mock Freelancer (freelancer@worklink.com)");
-        }
+        String aName = app.getApplicantName() != null ? app.getApplicantName() : "Applicant";
+        String aEmail = app.getApplicantEmail() != null ? app.getApplicantEmail() : "No Email";
+        holder.tvApplicant.setText("Applicant: " + aName + " (" + aEmail + ")");
 
         // Set status tag styling
         if ("Accepted".equalsIgnoreCase(app.getStatus())) {

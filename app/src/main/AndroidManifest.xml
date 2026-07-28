@@ -47,9 +47,11 @@
             android:exported="false" />
         <activity
             android:name=".FreelancerDashboardActivity"
+            android:windowSoftInputMode="adjustPan"
             android:exported="false" />
         <activity
             android:name=".EmployerDashboardActivity"
+            android:windowSoftInputMode="adjustPan"
             android:exported="false" />
         <activity
             android:name=".JobDetailsActivity"

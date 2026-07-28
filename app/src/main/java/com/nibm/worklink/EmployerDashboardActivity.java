@@ -12,8 +12,14 @@ import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RatingBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.widget.AdapterView;
+import java.util.Collections;
+import java.util.Comparator;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.annotation.NonNull;
@@ -52,6 +58,9 @@ public class EmployerDashboardActivity extends AppCompatActivity
     private RecyclerView recyclerApplications;
     private EmployerApplicationAdapter appAdapter;
     private TextView tvEmptyApplications;
+    private EditText etSearchApplications;
+    private Spinner spinnerSortApplications;
+    private List<Application> allEmployerApplications = new ArrayList<>();
 
     // Profile Views
     private View profileEmptyState;
@@ -117,8 +126,28 @@ public class EmployerDashboardActivity extends AppCompatActivity
         recyclerApplications = findViewById(R.id.recycler_employer_applications);
         recyclerApplications.setLayoutManager(new LinearLayoutManager(this));
         tvEmptyApplications = findViewById(R.id.tv_empty_employer_applications);
+        etSearchApplications = findViewById(R.id.et_search_applications);
+        spinnerSortApplications = findViewById(R.id.spinner_sort_applications);
+        
         appAdapter = new EmployerApplicationAdapter(new ArrayList<>(), this);
         recyclerApplications.setAdapter(appAdapter);
+
+        // Setup search and sort (Filter by Status)
+        String[] sortOptions = {"All Statuses", "Pending", "Under Review", "Shortlisted", "Accepted", "Rejected"};
+        ArrayAdapter<String> sortAdapter = new ArrayAdapter<>(this, R.layout.spinner_item, sortOptions);
+        sortAdapter.setDropDownViewResource(R.layout.spinner_item);
+        spinnerSortApplications.setAdapter(sortAdapter);
+
+        etSearchApplications.addTextChangedListener(new TextWatcher() {
+            @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+            @Override public void onTextChanged(CharSequence s, int start, int before, int count) { filterAndSortApplications(); }
+            @Override public void afterTextChanged(Editable s) {}
+        });
+
+        spinnerSortApplications.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) { filterAndSortApplications(); }
+            @Override public void onNothingSelected(AdapterView<?> parent) {}
+        });
 
         // Initialize Profile Tab Views
         profileEmptyState = findViewById(R.id.employer_profile_empty_state);
@@ -233,28 +262,79 @@ public class EmployerDashboardActivity extends AppCompatActivity
     // Load Applications Submitted to This Employer's Jobs
     private void loadEmployerApplications() {
         String email = getEmployerEmail();
-        List<Application> allApps = DataManager.getApplications();
-        List<Application> myApps = new ArrayList<>();
-        for (Application app : allApps) {
-            if (app.getJob().getEmployerContact().equalsIgnoreCase(email)) {
-                myApps.add(app);
+        db.collection("Applications").whereEqualTo("employerContact", email).get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                List<Application> myApps = new ArrayList<>();
+                for (DocumentSnapshot doc : queryDocumentSnapshots) {
+                    String appId = doc.getId();
+                    String jobId = doc.getString("jobId");
+                    String jobTitle = doc.getString("jobTitle");
+                    String company = doc.getString("company");
+                    String employerContact = doc.getString("employerContact");
+                    String coverLetter = doc.getString("coverLetter");
+                    String resumeFileName = doc.getString("resumeFileName");
+                    String status = doc.getString("status");
+                    String applicantName = doc.getString("applicantName");
+                    String applicantEmail = doc.getString("applicantEmail");
+                    String freelancerUid = doc.getString("freelancerUid");
+
+                    Job dummyJob = new Job(jobId, jobTitle, company, "", "", "", "", 0f, employerContact, "");
+                    Application app = new Application(appId, dummyJob, coverLetter, resumeFileName, status, applicantName, applicantEmail);
+                    app.setFreelancerUid(freelancerUid);
+                    myApps.add(app);
+
+                    // Backward compatibility: fetch missing name/email
+                    if (applicantName == null && freelancerUid != null && !freelancerUid.isEmpty()) {
+                        db.collection("Users").document(freelancerUid).get().addOnSuccessListener(userDoc -> {
+                            app.setApplicantName(userDoc.getString("name"));
+                            app.setApplicantEmail(userDoc.getString("email"));
+                            if (appAdapter != null) appAdapter.notifyDataSetChanged();
+                        });
+                    }
+                }
+
+                allEmployerApplications = myApps;
+                filterAndSortApplications();
+            })
+            .addOnFailureListener(e -> {
+                Toast.makeText(this, "Failed to load applications", Toast.LENGTH_SHORT).show();
+            });
+    }
+
+    private void filterAndSortApplications() {
+        if (allEmployerApplications == null) return;
+        
+        String query = etSearchApplications.getText().toString().trim().toLowerCase(Locale.getDefault());
+        String sortOption = spinnerSortApplications.getSelectedItem() != null ? spinnerSortApplications.getSelectedItem().toString() : "All Statuses";
+        
+        List<Application> filtered = new ArrayList<>();
+        for (Application app : allEmployerApplications) {
+            String appName = app.getApplicantName() != null ? app.getApplicantName().toLowerCase(Locale.getDefault()) : "";
+            String jobTitle = app.getJob() != null && app.getJob().getTitle() != null ? app.getJob().getTitle().toLowerCase(Locale.getDefault()) : "";
+            String appStatus = app.getStatus() != null ? app.getStatus() : "";
+            
+            boolean matchesSearch = appName.contains(query) || jobTitle.contains(query);
+            boolean matchesStatus = "All Statuses".equals(sortOption) || sortOption.equalsIgnoreCase(appStatus);
+            
+            if (matchesSearch && matchesStatus) {
+                filtered.add(app);
             }
         }
-
-        // --- FALLBACK FOR TESTING ---
-        // If there are no applications for the logged-in user, but there are hardcoded apps,
-        // show the hardcoded apps so the user can see what the UI looks like.
-        if (myApps.isEmpty() && !allApps.isEmpty()) {
-            myApps.addAll(allApps);
-        }
-
-        if (myApps.isEmpty()) {
+        
+        // Optional: still sort them nicely by Name when showing
+        Collections.sort(filtered, (a1, a2) -> {
+            String n1 = a1.getApplicantName() != null ? a1.getApplicantName() : "";
+            String n2 = a2.getApplicantName() != null ? a2.getApplicantName() : "";
+            return n1.compareToIgnoreCase(n2);
+        });
+        
+        if (filtered.isEmpty()) {
             tvEmptyApplications.setVisibility(View.VISIBLE);
             recyclerApplications.setVisibility(View.GONE);
         } else {
             tvEmptyApplications.setVisibility(View.GONE);
             recyclerApplications.setVisibility(View.VISIBLE);
-            appAdapter.updateApplications(myApps);
+            if (appAdapter != null) appAdapter.updateApplications(filtered);
         }
     }
 
@@ -560,8 +640,25 @@ public class EmployerDashboardActivity extends AppCompatActivity
                 .setItems(statuses, (dialog, which) -> {
                     String selectedStatus = statuses[which];
                     app.setStatus(selectedStatus);
-                    Toast.makeText(EmployerDashboardActivity.this, "Status Updated to " + selectedStatus, Toast.LENGTH_SHORT).show();
-                    loadEmployerApplications();
+                    
+                    db.collection("Applications").document(app.getId())
+                        .update("status", selectedStatus)
+                        .addOnSuccessListener(aVoid -> {
+                            Toast.makeText(EmployerDashboardActivity.this, "Status Updated to " + selectedStatus, Toast.LENGTH_SHORT).show();
+                            
+                            // Send notification to freelancer
+                            String recipientUid = app.getFreelancerUid();
+                            if (recipientUid != null && !recipientUid.isEmpty()) {
+                                String notifId = db.collection("Notifications").document().getId();
+                                String title = "Application Status Update";
+                                String message = "Your application for " + app.getJob().getTitle() + " has been marked as: " + selectedStatus;
+                                Notification notification = new Notification(notifId, recipientUid, title, message, "ApplicationStatus", app.getJob().getId(), app.getJob().getTitle(), System.currentTimeMillis());
+                                db.collection("Notifications").document(notifId).set(notification);
+                                DataManager.addNotification(notification);
+                            }
+
+                            loadEmployerApplications();
+                        });
                 })
                 .show();
     }
@@ -592,8 +689,11 @@ public class EmployerDashboardActivity extends AppCompatActivity
 
     @Override
     public void onDismissApplication(String appId) {
+        db.collection("Applications").document(appId).delete()
+            .addOnSuccessListener(aVoid -> {
+                loadEmployerApplications();
+            });
         DataManager.deleteApplication(appId);
-        loadEmployerApplications();
     }
 }
 
