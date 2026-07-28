@@ -49,6 +49,10 @@ public class EmployerDashboardActivity extends AppCompatActivity
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
 
+    // Navigation History Stack
+    private final java.util.Stack<Integer> tabHistory = new java.util.Stack<>();
+    private boolean isNavigatingBack = false;
+
     // My Jobs Views
     private RecyclerView recyclerJobs;
     private EmployerJobAdapter jobAdapter;
@@ -95,6 +99,14 @@ public class EmployerDashboardActivity extends AppCompatActivity
         bottomNav.setSelectedItemId(R.id.nav_employer_jobs);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+            if (id != R.id.nav_employer_notifications) {
+                int currentSelectedId = bottomNav.getSelectedItemId();
+                if (!isNavigatingBack && currentSelectedId != id) {
+                    tabHistory.push(currentSelectedId);
+                }
+                isNavigatingBack = false;
+            }
+
             if (id == R.id.nav_employer_jobs) {
                 lastSelectedNavId = id;
                 switchTab(layoutJobsTab);
@@ -202,10 +214,10 @@ public class EmployerDashboardActivity extends AppCompatActivity
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (layoutApplicationsTab.getVisibility() == View.VISIBLE || layoutProfileTab.getVisibility() == View.VISIBLE) {
-                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_employer_jobs);
-                    switchTab(layoutJobsTab);
-                    loadEmployerJobs();
+                if (!tabHistory.isEmpty()) {
+                    int previousTabId = tabHistory.pop();
+                    isNavigatingBack = true;
+                    if (bottomNav != null) bottomNav.setSelectedItemId(previousTabId);
                 } else {
                     finish();
                 }

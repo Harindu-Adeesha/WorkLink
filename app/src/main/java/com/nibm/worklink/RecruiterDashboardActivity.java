@@ -6,9 +6,11 @@ import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -35,6 +37,10 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
     private View layoutReviewsTab;
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
+
+    // Navigation History Stack
+    private final java.util.Stack<Integer> tabHistory = new java.util.Stack<>();
+    private boolean isNavigatingBack = false;
 
     // Adapters & User Data
     private RecruiterJobAdapter jobAdapter;
@@ -116,6 +122,12 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
         bottomNav.setSelectedItemId(R.id.nav_recruiter_dashboard);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+            int currentSelectedId = bottomNav.getSelectedItemId();
+            if (!isNavigatingBack && currentSelectedId != id) {
+                tabHistory.push(currentSelectedId);
+            }
+            isNavigatingBack = false;
+
             if (id == R.id.nav_recruiter_dashboard) {
                 switchTab(layoutDashboardTab);
                 return true;
@@ -154,10 +166,20 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
         Button btnVerifyJobs = findViewById(R.id.btn_verify_jobs);
         Button btnVerifyUsers = findViewById(R.id.btn_verify_users);
         Button btnViewReviews = findViewById(R.id.btn_view_reviews);
+        Button btnViewNotifications = findViewById(R.id.btn_view_notifications);
+        ImageView ivNotifications = findViewById(R.id.iv_recruiter_notifications);
+
+        View.OnClickListener openAlertsListener = v -> {
+            Intent intent = new Intent(RecruiterDashboardActivity.this, NotificationsActivity.class);
+            intent.putExtra("userRole", "Recruiter");
+            startActivity(intent);
+        };
 
         if (btnVerifyJobs != null) btnVerifyJobs.setOnClickListener(v -> bottomNav.setSelectedItemId(R.id.nav_recruiter_jobs));
         if (btnVerifyUsers != null) btnVerifyUsers.setOnClickListener(v -> bottomNav.setSelectedItemId(R.id.nav_recruiter_users));
         if (btnViewReviews != null) btnViewReviews.setOnClickListener(v -> bottomNav.setSelectedItemId(R.id.nav_recruiter_reviews));
+        if (btnViewNotifications != null) btnViewNotifications.setOnClickListener(openAlertsListener);
+        if (ivNotifications != null) ivNotifications.setOnClickListener(openAlertsListener);
 
         // Logout button
         Button btnLogout = findViewById(R.id.btn_recruiter_logout);
@@ -178,6 +200,24 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
                     .show();
             });
         }
+
+        // Handle system back button tab navigation
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (cardProfileEdit != null && cardProfileEdit.getVisibility() == View.VISIBLE) {
+                    exitProfileEditMode();
+                    return;
+                }
+                if (!tabHistory.isEmpty()) {
+                    int previousTabId = tabHistory.pop();
+                    isNavigatingBack = true;
+                    if (bottomNav != null) bottomNav.setSelectedItemId(previousTabId);
+                } else {
+                    finish();
+                }
+            }
+        });
     }
 
     @Override
@@ -371,7 +411,6 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
         recyclerReviews.setLayoutManager(new LinearLayoutManager(this));
 
         FirebaseFirestore.getInstance().collection("Reviews")
-            .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
             .get()
             .addOnSuccessListener(queryDocumentSnapshots -> {
                 List<Review> reviews = new ArrayList<>();
@@ -384,6 +423,8 @@ public class RecruiterDashboardActivity extends AppCompatActivity {
                         }
                     }
                 }
+                // Sort by createdAt descending
+                java.util.Collections.sort(reviews, (a, b) -> Long.compare(b.getCreatedAt(), a.getCreatedAt()));
                 RecruiterReviewAdapter reviewAdapter = new RecruiterReviewAdapter(reviews);
                 recyclerReviews.setAdapter(reviewAdapter);
             })

@@ -43,20 +43,32 @@ public class NotificationsActivity extends AppCompatActivity {
         if (getSupportActionBar() != null) {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
+        toolbar.setNavigationIcon(androidx.appcompat.R.drawable.abc_ic_ab_back_material);
+        toolbar.setNavigationOnClickListener(v -> finish());
+
+        TextView tvRole = findViewById(R.id.tv_notifications_role);
+        if (tvRole != null && userRole != null && !userRole.isEmpty()) {
+            tvRole.setText(userRole);
+        }
 
         // Setup Bottom Navigation
         BottomNavigationView bottomNav = findViewById(R.id.notifications_bottom_navigation);
-        // Highlight "Alerts" while we're in this screen
-        bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
-        bottomNav.setOnItemSelectedListener(item -> {
-            int id = item.getItemId();
-            if (id == R.id.nav_employer_notifications) {
-                return true; // already here
+        if (bottomNav != null) {
+            if ("Employer".equalsIgnoreCase(userRole)) {
+                bottomNav.setVisibility(View.VISIBLE);
+                bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
+                bottomNav.setOnItemSelectedListener(item -> {
+                    int id = item.getItemId();
+                    if (id == R.id.nav_employer_notifications) {
+                        return true;
+                    }
+                    finish();
+                    return true;
+                });
+            } else {
+                bottomNav.setVisibility(View.GONE);
             }
-            // For any other tab, just go back — the dashboard will handle it
-            finish();
-            return true;
-        });
+        }
 
         recyclerView = findViewById(R.id.recycler_notifications_page);
         tvEmpty      = findViewById(R.id.tv_empty_notifications_page);
@@ -132,7 +144,8 @@ public class NotificationsActivity extends AppCompatActivity {
         String a = audience.trim().toLowerCase();
         if (a.equals("all")) return true;
         if (userRole != null) {
-            return a.startsWith(userRole.trim().toLowerCase());
+            String roleLower = userRole.trim().toLowerCase();
+            return a.contains(roleLower) || roleLower.contains(a);
         }
         return false;
     }

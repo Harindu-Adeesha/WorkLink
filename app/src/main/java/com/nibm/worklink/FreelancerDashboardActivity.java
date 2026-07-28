@@ -38,6 +38,10 @@ public class FreelancerDashboardActivity extends AppCompatActivity
     private View layoutProfileTab;
     private BottomNavigationView bottomNav;
 
+    // Navigation History Stack
+    private final java.util.Stack<Integer> tabHistory = new java.util.Stack<>();
+    private boolean isNavigatingBack = false;
+
     // Jobs Feed Views
     private RecyclerView recyclerJobs;
     private JobAdapter jobAdapter;
@@ -80,6 +84,12 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         bottomNav.setSelectedItemId(R.id.nav_job_feed);
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
+            int currentSelectedId = bottomNav.getSelectedItemId();
+            if (!isNavigatingBack && currentSelectedId != id) {
+                tabHistory.push(currentSelectedId);
+            }
+            isNavigatingBack = false;
+
             if (id == R.id.nav_job_feed) {
                 switchTab(layoutJobsTab);
                 loadJobs("All");
@@ -154,10 +164,14 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
             public void handleOnBackPressed() {
-                if (layoutApplicationsTab.getVisibility() == View.VISIBLE || layoutProfileTab.getVisibility() == View.VISIBLE) {
-                    if (bottomNav != null) bottomNav.setSelectedItemId(R.id.nav_job_feed);
-                    switchTab(layoutJobsTab);
-                    loadJobs("All");
+                if (profileEditState != null && profileEditState.getVisibility() == View.VISIBLE) {
+                    loadProfileTab();
+                    return;
+                }
+                if (!tabHistory.isEmpty()) {
+                    int previousTabId = tabHistory.pop();
+                    isNavigatingBack = true;
+                    if (bottomNav != null) bottomNav.setSelectedItemId(previousTabId);
                 } else {
                     finish();
                 }
