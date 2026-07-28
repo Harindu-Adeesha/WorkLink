@@ -44,6 +44,7 @@ public class AnnouncementManagementActivity extends AppCompatActivity
 
     private FirebaseFirestore db;
     private ListenerRegistration announcementListener;
+    private BottomNavigationView bottomNavigationView;
 
     private String currentPriorityFilter = "All Priorities";
     private String currentSearchQuery = "";
@@ -89,7 +90,7 @@ public class AnnouncementManagementActivity extends AppCompatActivity
         fab.setOnClickListener(v -> showAnnouncementDialog(null, -1));
 
         // Bottom navigation
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_announcements);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -99,9 +100,9 @@ public class AnnouncementManagementActivity extends AppCompatActivity
             else if (id == R.id.nav_categories) intent = new Intent(this, CategoryManagementActivity.class);
             else if (id == R.id.nav_users) intent = new Intent(this, UserManagementActivity.class);
             if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
-                finish();
                 return true;
             }
             return false;
@@ -113,6 +114,14 @@ public class AnnouncementManagementActivity extends AppCompatActivity
         }
 
         loadAnnouncements();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_announcements);
+        }
     }
 
     private void loadAnnouncements() {

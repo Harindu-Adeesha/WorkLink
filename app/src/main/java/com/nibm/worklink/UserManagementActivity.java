@@ -78,9 +78,9 @@ public class UserManagementActivity extends AppCompatActivity
             else if (id == R.id.nav_announcements) intent = new Intent(this, AnnouncementManagementActivity.class);
             
             if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
-                finish();
                 return true;
             }
             return false;
@@ -92,6 +92,14 @@ public class UserManagementActivity extends AppCompatActivity
         }
 
         listenToUserUpdates();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_users);
+        }
     }
 
     private void setupSearchAndFilter() {

@@ -21,6 +21,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private TextView tvCategoryCount;
     private TextView tvUserCount;
     private TextView tvAnnouncementCount;
+    private BottomNavigationView bottomNavigationView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,7 +55,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
 
         // Bottom navigation
-        BottomNavigationView bottomNavigationView = findViewById(R.id.bottom_navigation);
+        bottomNavigationView = findViewById(R.id.bottom_navigation);
         bottomNavigationView.setSelectedItemId(R.id.nav_dashboard);
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
@@ -64,9 +65,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
             else if (id == R.id.nav_users) intent = new Intent(this, UserManagementActivity.class);
             else if (id == R.id.nav_announcements) intent = new Intent(this, AnnouncementManagementActivity.class);
             if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
-                finish();
                 return true;
             }
             return false;
@@ -78,6 +79,14 @@ public class AdminDashboardActivity extends AppCompatActivity {
         }
 
         loadStatistics();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_dashboard);
+        }
     }
 
     private void loadStatistics() {

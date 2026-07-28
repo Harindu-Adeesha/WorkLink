@@ -55,16 +55,16 @@ public class CategoryManagementActivity extends AppCompatActivity
         bottomNavigationView.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_categories) return true;
-            
+
             Intent intent = null;
             if (id == R.id.nav_dashboard) intent = new Intent(this, AdminDashboardActivity.class);
             else if (id == R.id.nav_users) intent = new Intent(this, UserManagementActivity.class);
             else if (id == R.id.nav_announcements) intent = new Intent(this, AnnouncementManagementActivity.class);
-            
+
             if (intent != null) {
+                intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                 startActivity(intent);
                 overridePendingTransition(0, 0);
-                finish();
                 return true;
             }
             return false;
@@ -76,6 +76,14 @@ public class CategoryManagementActivity extends AppCompatActivity
         }
 
         listenToCategoryUpdates();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (bottomNavigationView != null) {
+            bottomNavigationView.setSelectedItemId(R.id.nav_categories);
+        }
     }
 
     private void listenToCategoryUpdates() {
