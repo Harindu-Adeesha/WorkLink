@@ -74,6 +74,7 @@ public class EmployerDashboardActivity extends AppCompatActivity
     private FirebaseFirestore db;
     private String currentUid;
     private String employerEmail = "";
+    private int lastSelectedNavId = R.id.nav_employer_jobs; // track last real tab
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -95,14 +96,25 @@ public class EmployerDashboardActivity extends AppCompatActivity
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
             if (id == R.id.nav_employer_jobs) {
+                lastSelectedNavId = id;
                 switchTab(layoutJobsTab);
                 loadEmployerJobs();
                 return true;
             } else if (id == R.id.nav_employer_applications) {
+                lastSelectedNavId = id;
                 switchTab(layoutApplicationsTab);
                 loadEmployerApplications();
                 return true;
+            } else if (id == R.id.nav_employer_notifications) {
+                // Launch alerts screen; keep nav on the previous real tab
+                Intent intent = new Intent(EmployerDashboardActivity.this, NotificationsActivity.class);
+                intent.putExtra("userRole", "Employer");
+                startActivity(intent);
+                // Immediately revert nav highlight back to last real tab so it's correct on return
+                bottomNav.post(() -> bottomNav.setSelectedItemId(lastSelectedNavId));
+                return false; // returning false prevents the item being highlighted
             } else if (id == R.id.nav_employer_profile) {
+                lastSelectedNavId = id;
                 switchTab(layoutProfileTab);
                 loadEmployerProfileTab();
                 return true;
