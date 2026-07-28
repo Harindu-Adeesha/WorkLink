@@ -234,20 +234,75 @@ public class FreelancerDashboardActivity extends AppCompatActivity
 
     // Applications Functions
     private void loadApplications() {
-        List<Application> appsList = DataManager.getApplications();
-        if (appsList.isEmpty()) {
+        if (currentUid == null) {
             tvEmptyApplications.setVisibility(View.VISIBLE);
             recyclerApplications.setVisibility(View.GONE);
-        } else {
-            tvEmptyApplications.setVisibility(View.GONE);
-            recyclerApplications.setVisibility(View.VISIBLE);
-            if (appAdapter == null) {
-                appAdapter = new ApplicationAdapter(appsList, this);
-                recyclerApplications.setAdapter(appAdapter);
-            } else {
-                appAdapter.updateApplications(appsList);
-            }
+            return;
         }
+
+        db.collection("Applications")
+            .whereEqualTo("freelancerUid", currentUid)
+            .get()
+            .addOnSuccessListener(queryDocumentSnapshots -> {
+                List<Application> appsList = new ArrayList<>();
+
+                if (queryDocumentSnapshots != null && !queryDocumentSnapshots.isEmpty()) {
+                    for (DocumentSnapshot doc : queryDocumentSnapshots.getDocuments()) {
+                        String id            = doc.getString("id");
+                        String jobId         = doc.getString("jobId");
+                        String jobTitle      = doc.getString("jobTitle");
+                        String company       = doc.getString("company");
+                        String empContact    = doc.getString("employerContact");
+                        String coverLetter   = doc.getString("coverLetter");
+                        String resumeUrl     = doc.getString("resumeUrl");
+                        if (resumeUrl == null) resumeUrl = doc.getString("resumeFileName");
+                        String status        = doc.getString("status");
+                        if (status == null) status = "Pending";
+
+                        // Build a minimal Job for display
+                        Job job = DataManager.getJobById(jobId);
+                        if (job == null) {
+                            // Create a lightweight placeholder if job is not in cache
+                            job = new Job(
+                                jobId != null ? jobId : "",
+                                jobTitle != null ? jobTitle : "Job",
+                                company != null ? company : "",
+                                "", "", "",
+                                "", 0f,
+                                empContact != null ? empContact : "",
+                                "", status, false
+                            );
+                        }
+
+                        Application app = new Application(
+                            id != null ? id : doc.getId(),
+                            job, coverLetter != null ? coverLetter : "",
+                            resumeUrl != null ? resumeUrl : "",
+                            status
+                        );
+                        appsList.add(app);
+                    }
+                }
+
+                if (appsList.isEmpty()) {
+                    tvEmptyApplications.setVisibility(View.VISIBLE);
+                    recyclerApplications.setVisibility(View.GONE);
+                } else {
+                    tvEmptyApplications.setVisibility(View.GONE);
+                    recyclerApplications.setVisibility(View.VISIBLE);
+                    if (appAdapter == null) {
+                        appAdapter = new ApplicationAdapter(appsList, this);
+                        recyclerApplications.setAdapter(appAdapter);
+                    } else {
+                        appAdapter.updateApplications(appsList);
+                    }
+                }
+            })
+            .addOnFailureListener(e -> {
+                tvEmptyApplications.setVisibility(View.VISIBLE);
+                recyclerApplications.setVisibility(View.GONE);
+                Toast.makeText(this, "Failed to load applications", Toast.LENGTH_SHORT).show();
+            });
     }
 
     // Profile Functions
@@ -492,21 +547,43 @@ public class FreelancerDashboardActivity extends AppCompatActivity
         btnCancel.setOnClickListener(v -> dialog.dismiss());
         btnSubmit.setOnClickListener(v -> {
             float rating = ratingBar.getRating();
-            String review = etReviewText.getText().toString().trim();
-            if (review.isEmpty()) {
+            String reviewText = etReviewText.getText().toString().trim();
+            if (reviewText.isEmpty()) {
                 etReviewText.setError("Required");
                 return;
             }
 
-            Review newReview = new Review(
-                    String.valueOf(DataManager.getReviews().size() + 1),
-                    jobId,
-                    rating,
-                    review
-            );
-            DataManager.addReview(newReview);
-            Toast.makeText(this, "Review Submitted. Thank you!", Toast.LENGTH_SHORT).show();
-            dialog.dismiss();
+            btnSubmit.setEnabled(false);
+            btnSubmit.setText("Submitting…");
+
+            // Resolve company from cached job
+            Job job = DataManager.getJobById(jobId);
+            String company = job != null ? job.getCompany() : "";
+
+            String reviewerUid = currentUid != null ? currentUid : "";
+
+            // Build Firestore document
+            String reviewId = String.valueOf(System.currentTimeMillis());
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            map.put("id", reviewId);
+            map.put("jobId", jobId);
+            map.put("jobTitle", jobTitle);
+            map.put("company", company);
+            map.put("reviewerUid", reviewerUid);
+            map.put("rating", rating);
+            map.put("reviewText", reviewText);
+            map.put("createdAt", System.currentTimeMillis());
+
+            db.collection("Reviews").document(reviewId).set(map)
+                .addOnSuccessListener(aVoid -> {
+                    Toast.makeText(this, "Review submitted! Thank you.", Toast.LENGTH_SHORT).show();
+                    dialog.dismiss();
+                })
+                .addOnFailureListener(e -> {
+                    btnSubmit.setEnabled(true);
+                    btnSubmit.setText("Submit");
+                    Toast.makeText(this, "Failed to submit review: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                });
         });
 
         dialog.show();

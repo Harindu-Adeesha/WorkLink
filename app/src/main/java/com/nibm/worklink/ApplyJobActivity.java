@@ -12,6 +12,7 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.HashMap;
@@ -119,8 +120,11 @@ public class ApplyJobActivity extends AppCompatActivity {
         DataManager.addApplication(app);
 
         // Save to Firestore DB collection "Applications"
+        String freelancerUid = FirebaseAuth.getInstance().getCurrentUser() != null
+                ? FirebaseAuth.getInstance().getCurrentUser().getUid() : "";
         Map<String, Object> map = new HashMap<>();
         map.put("id", appId);
+        map.put("freelancerUid", freelancerUid);
         map.put("jobId", currentJob != null ? currentJob.getId() : "");
         map.put("jobTitle", currentJob != null ? currentJob.getTitle() : "");
         map.put("company", currentJob != null ? currentJob.getCompany() : "");
