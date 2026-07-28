@@ -35,11 +35,12 @@
                 android:textStyle="bold"/>
 
             <TextView
+                android:id="@+id/tv_notifications_role_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="end"
                 android:layout_marginEnd="16dp"
-                android:text="Employer"
+                android:text="WorkLink"
                 android:textColor="#6C757D"
                 android:textSize="14sp"
                 android:textStyle="bold"

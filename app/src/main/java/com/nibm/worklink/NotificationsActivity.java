@@ -1,5 +1,6 @@
 package com.nibm.worklink;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -36,6 +37,9 @@ public class NotificationsActivity extends AppCompatActivity {
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         currentUid = mAuth.getCurrentUser() != null ? mAuth.getCurrentUser().getUid() : null;
         userRole = getIntent().getStringExtra("userRole");
+        if (userRole == null || userRole.isEmpty()) {
+            userRole = "Freelancer";
+        }
 
         // Setup Toolbar
         Toolbar toolbar = findViewById(R.id.toolbar_notifications);
@@ -44,16 +48,30 @@ public class NotificationsActivity extends AppCompatActivity {
             getSupportActionBar().setDisplayShowTitleEnabled(false);
         }
 
+        TextView tvRoleBadge = findViewById(R.id.tv_notifications_role_badge);
+        if (tvRoleBadge != null) {
+            tvRoleBadge.setText(userRole);
+        }
+
         // Setup Bottom Navigation
         BottomNavigationView bottomNav = findViewById(R.id.notifications_bottom_navigation);
-        // Highlight "Alerts" while we're in this screen
-        bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
+        if ("Freelancer".equalsIgnoreCase(userRole)) {
+            bottomNav.getMenu().clear();
+            bottomNav.inflateMenu(R.menu.freelancer_nav_menu);
+            bottomNav.setSelectedItemId(R.id.nav_freelancer_notifications);
+        } else {
+            bottomNav.getMenu().clear();
+            bottomNav.inflateMenu(R.menu.employer_nav_menu);
+            bottomNav.setSelectedItemId(R.id.nav_employer_notifications);
+        }
         bottomNav.setOnItemSelectedListener(item -> {
             int id = item.getItemId();
-            if (id == R.id.nav_employer_notifications) {
+            if (id == R.id.nav_employer_notifications || id == R.id.nav_freelancer_notifications) {
                 return true; // already here
             }
-            // For any other tab, just go back — the dashboard will handle it
+            Intent data = new Intent();
+            data.putExtra("selected_nav_id", id);
+            setResult(RESULT_OK, data);
             finish();
             return true;
         });

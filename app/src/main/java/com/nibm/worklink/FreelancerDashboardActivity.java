@@ -60,6 +60,31 @@ public class FreelancerDashboardActivity extends AppCompatActivity
     private FirebaseFirestore db;
     private String currentUid;
     private final List<String> availableCategories = new ArrayList<>();
+    private final androidx.activity.result.ActivityResultLauncher<Intent> notificationsLauncher =
+            registerForActivityResult(new androidx.activity.result.contract.ActivityResultContracts.StartActivityForResult(), result -> {
+                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
+                    int targetNavId = result.getData().getIntExtra("selected_nav_id", -1);
+                    if (targetNavId != -1) {
+                        navigateToTab(targetNavId);
+                    }
+                }
+            });
+
+    private void navigateToTab(int navId) {
+        if (bottomNav != null) {
+            bottomNav.setSelectedItemId(navId);
+        }
+        if (navId == R.id.nav_job_feed) {
+            switchTab(layoutJobsTab);
+            loadJobs("All");
+        } else if (navId == R.id.nav_my_applications) {
+            switchTab(layoutApplicationsTab);
+            loadApplications();
+        } else if (navId == R.id.nav_profile) {
+            switchTab(layoutProfileTab);
+            loadProfileTab();
+        }
+    }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,6 +113,11 @@ public class FreelancerDashboardActivity extends AppCompatActivity
                 switchTab(layoutApplicationsTab);
                 loadApplications();
                 return true;
+            } else if (id == R.id.nav_freelancer_notifications) {
+                Intent intent = new Intent(FreelancerDashboardActivity.this, NotificationsActivity.class);
+                intent.putExtra("userRole", "Freelancer");
+                notificationsLauncher.launch(intent);
+                return false;
             } else if (id == R.id.nav_profile) {
                 switchTab(layoutProfileTab);
                 loadProfileTab();
