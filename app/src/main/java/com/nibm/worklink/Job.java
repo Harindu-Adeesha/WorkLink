@@ -10,6 +10,7 @@ public class Job {
     private String employerDescription;
     private float employerRating;
     private String employerContact;
+    private String employerUid;   // Firebase UID of the employer who posted this job
     private String deadline;
     private String status = "Pending";
     private boolean isVerified = false;
@@ -47,6 +48,8 @@ public class Job {
     public String getEmployerDescription() { return employerDescription; }
     public float getEmployerRating() { return employerRating; }
     public String getEmployerContact() { return employerContact; }
+    public String getEmployerUid() { return employerUid; }
+    public void setEmployerUid(String employerUid) { this.employerUid = employerUid; }
     public String getDeadline() { return deadline; }
     public void setDeadline(String deadline) { this.deadline = deadline; }
 

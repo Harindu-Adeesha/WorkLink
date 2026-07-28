@@ -39,6 +39,7 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
             intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_UID, job.getEmployerUid()); // preferred: real UID
             intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
         });
@@ -49,6 +50,7 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
             intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_UID, job.getEmployerUid()); // preferred: real UID
             intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
         });
@@ -59,6 +61,7 @@ public class RecruiterJobAdapter extends RecyclerView.Adapter<RecruiterJobAdapte
             intent.putExtra(JobActionActivity.EXTRA_JOB_ID, job.getId());
             intent.putExtra(JobActionActivity.EXTRA_JOB_TITLE, job.getTitle());
             intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_CONTACT, job.getEmployerContact());
+            intent.putExtra(JobActionActivity.EXTRA_EMPLOYER_UID, job.getEmployerUid()); // preferred: real UID
             intent.putExtra(JobActionActivity.EXTRA_COMPANY, job.getCompany());
             v.getContext().startActivity(intent);
         });

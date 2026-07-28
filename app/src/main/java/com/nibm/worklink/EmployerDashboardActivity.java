@@ -561,6 +561,7 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     Job updated = new Job(
                             existingJob.getId(), title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    updated.setEmployerUid(currentUid); // stamp UID so notifications route correctly
                     db.collection("Jobs").document(existingJob.getId()).set(updated)
                         .addOnSuccessListener(aVoid -> {
                             Toast.makeText(this, "Job Listing Updated!", Toast.LENGTH_SHORT).show();
@@ -573,6 +574,7 @@ public class EmployerDashboardActivity extends AppCompatActivity
                     Job newJob = new Job(
                             newId, title, company, desc, salary, category, compDesc, compRating, contact, deadline
                     );
+                    newJob.setEmployerUid(currentUid); // stamp UID so notifications route correctly
                     ref.set(newJob).addOnSuccessListener(aVoid -> {
                         Toast.makeText(this, "New Job Posted Successfully!", Toast.LENGTH_SHORT).show();
                         loadEmployerJobs();
