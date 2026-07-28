@@ -140,9 +140,12 @@
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
+                android:id="@+id/card_users"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="16dp"
+                android:clickable="true"
+                android:focusable="true"
                 app:cardBackgroundColor="@android:color/white"
                 app:cardCornerRadius="8dp"
                 app:cardElevation="2dp"
@@ -161,10 +164,11 @@
                         android:textStyle="bold"
                         android:textColor="#6C757D"/>
                     <TextView
+                        android:id="@+id/tv_user_count"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_below="@id/users_title"
-                        android:text="8,432"
+                        android:text="0"
                         android:textSize="32sp"
                         android:textStyle="bold"
                         android:textColor="#14213d"

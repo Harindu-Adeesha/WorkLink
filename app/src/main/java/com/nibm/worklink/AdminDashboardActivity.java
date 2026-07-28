@@ -2,7 +2,6 @@ package com.nibm.worklink;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,7 +15,9 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private FirebaseFirestore db;
     private ListenerRegistration categoryListener;
+    private ListenerRegistration userListener;
     private TextView tvCategoryCount;
+    private TextView tvUserCount;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -25,11 +26,20 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
         db = FirebaseFirestore.getInstance();
         tvCategoryCount = findViewById(R.id.tv_category_count);
+        tvUserCount = findViewById(R.id.tv_user_count);
 
         MaterialCardView cardCategories = findViewById(R.id.card_categories);
         if (cardCategories != null) {
             cardCategories.setOnClickListener(v -> {
                 Intent intent = new Intent(AdminDashboardActivity.this, CategoryManagementActivity.class);
+                startActivity(intent);
+            });
+        }
+
+        MaterialCardView cardUsers = findViewById(R.id.card_users);
+        if (cardUsers != null) {
+            cardUsers.setOnClickListener(v -> {
+                Intent intent = new Intent(AdminDashboardActivity.this, UserManagementActivity.class);
                 startActivity(intent);
             });
         }
@@ -59,14 +69,21 @@ public class AdminDashboardActivity extends AppCompatActivity {
             ivProfile.setOnClickListener(v -> startActivity(new Intent(this, ProfileActivity.class)));
         }
 
-        loadCategoryCount();
+        loadCounts();
     }
 
-    private void loadCategoryCount() {
+    private void loadCounts() {
         categoryListener = db.collection("Categories")
                 .addSnapshotListener((snapshots, error) -> {
                     if (error == null && snapshots != null && tvCategoryCount != null) {
                         tvCategoryCount.setText(String.valueOf(snapshots.size()));
+                    }
+                });
+
+        userListener = db.collection("Users")
+                .addSnapshotListener((snapshots, error) -> {
+                    if (error == null && snapshots != null && tvUserCount != null) {
+                        tvUserCount.setText(String.valueOf(snapshots.size()));
                     }
                 });
     }
@@ -77,6 +94,10 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (categoryListener != null) {
             categoryListener.remove();
         }
+        if (userListener != null) {
+            userListener.remove();
+        }
     }
 }
+
 
