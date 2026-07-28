@@ -11,6 +11,7 @@ public class DataManager {
     private static List<Job> jobs = new ArrayList<>();
     private static List<Application> applications = new ArrayList<>();
     private static List<Review> reviews = new ArrayList<>();
+    private static List<Notification> notifications = new ArrayList<>();
     private static Profile freelancerProfile = null;
     private static EmployerProfile employerProfile = null;
 
@@ -165,5 +166,13 @@ public class DataManager {
 
     public static void addReview(Review review) {
         reviews.add(review);
+    }
+
+    public static List<Notification> getNotifications() {
+        return notifications;
+    }
+
+    public static void addNotification(Notification notification) {
+        notifications.add(notification);
     }
 }
