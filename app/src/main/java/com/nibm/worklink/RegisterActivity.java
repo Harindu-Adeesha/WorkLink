@@ -191,19 +191,43 @@ public class RegisterActivity extends AppCompatActivity {
                     }
                 }
             }
-            if (availableCategories.isEmpty()) {
-                availableCategories.add("Software Development");
-                availableCategories.add("UI/UX Design");
-                availableCategories.add("Content Writing");
-                availableCategories.add("Digital Marketing");
-            }
         });
     }
 
     private void showCategorySelectionDialog(EditText etSkills) {
-        if (availableCategories.isEmpty()) {
-            fetchCategoriesFromBackend();
+        // If categories are already cached, show dialog immediately
+        if (!availableCategories.isEmpty()) {
+            openCategoryDialog(etSkills);
+            return;
         }
+
+        // Otherwise fetch from DB first, then show dialog inside the success callback
+        Toast.makeText(this, "Loading categories...", Toast.LENGTH_SHORT).show();
+        db.collection("Categories").get()
+            .addOnSuccessListener(snapshots -> {
+                availableCategories.clear();
+                if (snapshots != null) {
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        String name = doc.getString("name");
+                        if (name != null && !name.trim().isEmpty()) {
+                            availableCategories.add(name);
+                        }
+                    }
+                }
+                if (availableCategories.isEmpty()) {
+                    Toast.makeText(this, "No categories available. Ask admin to add categories.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+                // Open dialog — data is loaded from DB
+                openCategoryDialog(etSkills);
+            })
+            .addOnFailureListener(e -> {
+                Log.e(TAG, "Failed to load categories: " + e.getMessage());
+                Toast.makeText(this, "Failed to load categories: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            });
+    }
+
+    private void openCategoryDialog(EditText etSkills) {
         String[] items = availableCategories.toArray(new String[0]);
         boolean[] checkedItems = new boolean[items.length];
 
